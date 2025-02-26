@@ -1,20 +1,19 @@
 // Import utils
-import basicHelper from '@utils/basicHelper';
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
-
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
 // Import pages
-import dashboardPage from '@pages/BO/dashboard';
 import imageSettingsPage from '@pages/BO/design/imageSettings';
 import addImageTypePage from '@pages/BO/design/imageSettings/add';
 
-// Import data
-import ImageTypeData from '@data/faker/imageType';
-
 import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  type BrowserContext,
+  FakerImageType,
+  type Page,
+  utilsCore,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_design_imageSettings_sortAndPagination';
 
@@ -31,44 +30,50 @@ describe('BO - Design - Image Settings : Pagination and sort image settings', as
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'Design > Image Settings\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToImageSettingsPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.designParentLink,
-      dashboardPage.imageSettingsLink,
+      boDashboardPage.designParentLink,
+      boDashboardPage.imageSettingsLink,
     );
     await imageSettingsPage.closeSfToolBar(page);
 
     const pageTitle = await imageSettingsPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(imageSettingsPage.pageTitle);
+    expect(pageTitle).to.contains(imageSettingsPage.pageTitle);
   });
 
   it('should reset all filters and get number of image types in BO', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'resetFilterFirst', baseContext);
 
     numberOfImageTypes = await imageSettingsPage.resetAndGetNumberOfLines(page);
-    await expect(numberOfImageTypes).to.be.above(0);
+    expect(numberOfImageTypes).to.be.above(0);
   });
 
   // 1 : Create 15 new image types
   describe('Create 15 image types', async () => {
     const creationTests: number[] = new Array(15).fill(0, 0, 15);
     creationTests.forEach((test: number, index: number) => {
-      const createImageTypeData: ImageTypeData = new ImageTypeData({name: `todelete${index}`});
+      const createImageTypeData: FakerImageType = new FakerImageType({name: `todelete${index}`});
 
       it('should go to add new image type page', async function () {
         await testContext.addContextItem(this, 'testIdentifier', `goToAddImageTypePage${index}`, baseContext);
@@ -76,17 +81,17 @@ describe('BO - Design - Image Settings : Pagination and sort image settings', as
         await imageSettingsPage.goToNewImageTypePage(page);
 
         const pageTitle = await addImageTypePage.getPageTitle(page);
-        await expect(pageTitle).to.contains(addImageTypePage.pageTitleCreate);
+        expect(pageTitle).to.contains(addImageTypePage.pageTitleCreate);
       });
 
       it(`should create image type n°${index + 1}`, async function () {
         await testContext.addContextItem(this, 'testIdentifier', `createImageType${index}`, baseContext);
 
         const textResult = await addImageTypePage.createEditImageType(page, createImageTypeData);
-        await expect(textResult).to.contains(imageSettingsPage.successfulCreationMessage);
+        expect(textResult).to.contains(imageSettingsPage.successfulCreationMessage);
 
         const numberOfImageTypesAfterCreation = await imageSettingsPage.getNumberOfElementInGrid(page);
-        await expect(numberOfImageTypesAfterCreation).to.be.equal(numberOfImageTypes + 1 + index);
+        expect(numberOfImageTypesAfterCreation).to.be.equal(numberOfImageTypes + 1 + index);
       });
     });
   });
@@ -97,28 +102,28 @@ describe('BO - Design - Image Settings : Pagination and sort image settings', as
       await testContext.addContextItem(this, 'testIdentifier', 'changeItemsNumberTo20', baseContext);
 
       const paginationNumber = await imageSettingsPage.selectPaginationLimit(page, 20);
-      expect(paginationNumber).to.equal('1');
+      expect(paginationNumber).to.contains('(page 1 / 2)');
     });
 
     it('should click on next', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'clickOnNext', baseContext);
 
       const paginationNumber = await imageSettingsPage.paginationNext(page);
-      expect(paginationNumber).to.equal('2');
+      expect(paginationNumber).to.contains('(page 2 / 2)');
     });
 
     it('should click on previous', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'clickOnPrevious', baseContext);
 
       const paginationNumber = await imageSettingsPage.paginationPrevious(page);
-      expect(paginationNumber).to.equal('1');
+      expect(paginationNumber).to.contains('(page 1 / 2)');
     });
 
     it('should change the items number to 50 per page', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'changeItemsNumberTo50', baseContext);
 
       const paginationNumber = await imageSettingsPage.selectPaginationLimit(page, 50);
-      expect(paginationNumber).to.equal('1');
+      expect(paginationNumber).to.contains('(page 1 / 1)');
     });
   });
 
@@ -127,42 +132,42 @@ describe('BO - Design - Image Settings : Pagination and sort image settings', as
     const sortTests = [
       {
         args: {
-          testIdentifier: 'sortByIdDesc', sortBy: 'id_image_type', sortDirection: 'down', isFloat: true,
+          testIdentifier: 'sortByIdDesc', sortBy: 'id_image_type', sortDirection: 'desc', isFloat: true,
         },
       },
       {
         args: {
-          testIdentifier: 'sortByNameAsc', sortBy: 'name', sortDirection: 'up',
+          testIdentifier: 'sortByNameAsc', sortBy: 'name', sortDirection: 'asc',
         },
       },
       {
         args: {
-          testIdentifier: 'sortByNameDesc', sortBy: 'name', sortDirection: 'down',
+          testIdentifier: 'sortByNameDesc', sortBy: 'name', sortDirection: 'desc',
         },
       },
       {
         args: {
-          testIdentifier: 'sortByWidthAsc', sortBy: 'width', sortDirection: 'up', isFloat: true,
+          testIdentifier: 'sortByWidthAsc', sortBy: 'width', sortDirection: 'asc', isFloat: true,
         },
       },
       {
         args: {
-          testIdentifier: 'sortByWidthDesc', sortBy: 'width', sortDirection: 'down', isFloat: true,
+          testIdentifier: 'sortByWidthDesc', sortBy: 'width', sortDirection: 'desc', isFloat: true,
         },
       },
       {
         args: {
-          testIdentifier: 'sortByHeightAsc', sortBy: 'height', sortDirection: 'up', isFloat: true,
+          testIdentifier: 'sortByHeightAsc', sortBy: 'height', sortDirection: 'asc', isFloat: true,
         },
       },
       {
         args: {
-          testIdentifier: 'sortByHeightDesc', sortBy: 'height', sortDirection: 'down', isFloat: true,
+          testIdentifier: 'sortByHeightDesc', sortBy: 'height', sortDirection: 'desc', isFloat: true,
         },
       },
       {
         args: {
-          testIdentifier: 'sortByIdAsc', sortBy: 'id_image_type', sortDirection: 'up', isFloat: true,
+          testIdentifier: 'sortByIdAsc', sortBy: 'id_image_type', sortDirection: 'asc', isFloat: true,
         },
       },
     ];
@@ -181,20 +186,20 @@ describe('BO - Design - Image Settings : Pagination and sort image settings', as
           const nonSortedTableFloat: number[] = nonSortedTable.map((text: string): number => parseFloat(text));
           const sortedTableFloat: number[] = sortedTable.map((text: string): number => parseFloat(text));
 
-          const expectedResult = await basicHelper.sortArrayNumber(nonSortedTableFloat);
+          const expectedResult = await utilsCore.sortArrayNumber(nonSortedTableFloat);
 
-          if (test.args.sortDirection === 'up') {
-            await expect(sortedTableFloat).to.deep.equal(expectedResult);
+          if (test.args.sortDirection === 'asc') {
+            expect(sortedTableFloat).to.deep.equal(expectedResult);
           } else {
-            await expect(sortedTableFloat).to.deep.equal(expectedResult.reverse());
+            expect(sortedTableFloat).to.deep.equal(expectedResult.reverse());
           }
         } else {
-          const expectedResult = await basicHelper.sortArray(nonSortedTable);
+          const expectedResult = await utilsCore.sortArray(nonSortedTable);
 
-          if (test.args.sortDirection === 'up') {
-            await expect(sortedTable).to.deep.equal(expectedResult);
+          if (test.args.sortDirection === 'asc') {
+            expect(sortedTable).to.deep.equal(expectedResult);
           } else {
-            await expect(sortedTable).to.deep.equal(expectedResult.reverse());
+            expect(sortedTable).to.deep.equal(expectedResult.reverse());
           }
         }
       });
@@ -212,7 +217,7 @@ describe('BO - Design - Image Settings : Pagination and sort image settings', as
 
       for (let i = 1; i <= numberOfImageTypesAfterFilter; i++) {
         const textColumn = await imageSettingsPage.getTextColumn(page, i, 'name');
-        await expect(textColumn).to.contains('todelete');
+        expect(textColumn).to.contains('todelete');
       }
     });
 
@@ -220,14 +225,14 @@ describe('BO - Design - Image Settings : Pagination and sort image settings', as
       await testContext.addContextItem(this, 'testIdentifier', 'bulkDeleteImageTypes', baseContext);
 
       const deleteTextResult = await imageSettingsPage.bulkDeleteImageTypes(page);
-      await expect(deleteTextResult).to.be.contains(imageSettingsPage.successfulMultiDeleteMessage);
+      expect(deleteTextResult).to.be.contains(imageSettingsPage.successfulMultiDeleteMessage);
     });
 
     it('should reset all filters', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'resetFilterAfterDelete', baseContext);
 
       const numberOfImageTypesAfterReset = await imageSettingsPage.resetAndGetNumberOfLines(page);
-      await expect(numberOfImageTypesAfterReset).to.be.equal(numberOfImageTypes);
+      expect(numberOfImageTypesAfterReset).to.be.equal(numberOfImageTypes);
     });
   });
 });

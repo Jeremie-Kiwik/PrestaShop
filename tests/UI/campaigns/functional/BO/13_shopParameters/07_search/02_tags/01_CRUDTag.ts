@@ -1,22 +1,21 @@
 // Import utils
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
 
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
-
 // Import pages
-import dashboardPage from '@pages/BO/dashboard';
-import searchPage from '@pages/BO/shopParameters/search';
 import tagsPage from '@pages/BO/shopParameters/search/tags';
 import addTagPage from '@pages/BO/shopParameters/search/tags/add';
 
-// Import data
-import Languages from '@data/demo/languages';
-import TagData from '@data/faker/tag';
-
 import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  boSearchPage,
+  type BrowserContext,
+  dataLanguages,
+  FakerSearchTag,
+  type Page,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_shopParameters_search_tags_CRUDTag';
 
@@ -30,44 +29,50 @@ describe('BO - Shop Parameters - Search : Create, update and delete tag in BO', 
   let page: Page;
   let numberOfTags: number = 0;
 
-  const createTagData: TagData = new TagData({language: Languages.english.name});
-  const editTagData: TagData = new TagData({language: Languages.french.name});
+  const createTagData: FakerSearchTag = new FakerSearchTag({language: dataLanguages.english.name});
+  const editTagData: FakerSearchTag = new FakerSearchTag({language: dataLanguages.french.name});
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'Shop Parameters > Search\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToSearchPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.shopParametersParentLink,
-      dashboardPage.searchLink,
+      boDashboardPage.shopParametersParentLink,
+      boDashboardPage.searchLink,
     );
 
-    const pageTitle = await searchPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(searchPage.pageTitle);
+    const pageTitle = await boSearchPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boSearchPage.pageTitle);
   });
 
   it('should go to \'Tags\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToTagsPage', baseContext);
 
-    await searchPage.goToTagsPage(page);
+    await boSearchPage.goToTagsPage(page);
     numberOfTags = await tagsPage.getNumberOfElementInGrid(page);
 
     const pageTitle = await tagsPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(tagsPage.pageTitle);
+    expect(pageTitle).to.contains(tagsPage.pageTitle);
   });
 
   // 1 - Create tag
@@ -78,17 +83,17 @@ describe('BO - Shop Parameters - Search : Create, update and delete tag in BO', 
       await tagsPage.goToAddNewTagPage(page);
 
       const pageTitle = await addTagPage.getPageTitle(page);
-      await expect(pageTitle).to.contains(addTagPage.pageTitleCreate);
+      expect(pageTitle).to.contains(addTagPage.pageTitleCreate);
     });
 
     it('should create tag and check result', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'createTag', baseContext);
 
       const textResult = await addTagPage.setTag(page, createTagData);
-      await expect(textResult).to.contains(tagsPage.successfulCreationMessage);
+      expect(textResult).to.contains(tagsPage.successfulCreationMessage);
 
       const numberOfElementAfterCreation = await tagsPage.getNumberOfElementInGrid(page);
-      await expect(numberOfElementAfterCreation).to.be.equal(numberOfTags + 1);
+      expect(numberOfElementAfterCreation).to.be.equal(numberOfTags + 1);
     });
   });
 
@@ -100,17 +105,17 @@ describe('BO - Shop Parameters - Search : Create, update and delete tag in BO', 
       await tagsPage.gotoEditTagPage(page, 1);
 
       const pageTitle = await addTagPage.getPageTitle(page);
-      await expect(pageTitle).to.contains(addTagPage.pageTitleEdit);
+      expect(pageTitle).to.contains(addTagPage.pageTitleEdit);
     });
 
     it('should update tag', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'updateTag', baseContext);
 
       const textResult = await addTagPage.setTag(page, editTagData);
-      await expect(textResult).to.contains(tagsPage.successfulUpdateMessage);
+      expect(textResult).to.contains(tagsPage.successfulUpdateMessage);
 
       const numberOfTagsAfterUpdate = await tagsPage.getNumberOfElementInGrid(page);
-      await expect(numberOfTagsAfterUpdate).to.be.equal(numberOfTags + 1);
+      expect(numberOfTagsAfterUpdate).to.be.equal(numberOfTags + 1);
     });
   });
 
@@ -120,10 +125,10 @@ describe('BO - Shop Parameters - Search : Create, update and delete tag in BO', 
       await testContext.addContextItem(this, 'testIdentifier', 'deleteTag', baseContext);
 
       const textResult = await tagsPage.deleteTag(page, 1);
-      await expect(textResult).to.contains(tagsPage.successfulDeleteMessage);
+      expect(textResult).to.contains(tagsPage.successfulDeleteMessage);
 
       const numberOfTagsAfterDelete = await tagsPage.getNumberOfElementInGrid(page);
-      await expect(numberOfTagsAfterDelete).to.be.equal(numberOfTags);
+      expect(numberOfTagsAfterDelete).to.be.equal(numberOfTags);
     });
   });
 });

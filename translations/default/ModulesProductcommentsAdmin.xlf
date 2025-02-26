@@ -31,20 +31,35 @@
         <target>Allow users to post reviews on your products and/or rate them based on specific criteria.</target>
         <note>Line: 58</note>
       </trans-unit>
+      <trans-unit id="9dc1140983196141368ceda7565128a8">
+        <source>Minimum time between 2 reviews from the same user</source>
+        <target>Minimum time between 2 reviews from the same user</target>
+        <note>Line: 392</note>
+      </trans-unit>
+      <trans-unit id="b6604006fb977868227d4fdea6186697">
+        <source>Number of comments per page</source>
+        <target>Number of comments per page</target>
+        <note>Line: 399</note>
+      </trans-unit>
       <trans-unit id="c888438d14855d7d96a2724ee9c306bd">
         <source>Settings updated</source>
         <target>Settings updated</target>
         <note>Line: 204</note>
+      </trans-unit>
+      <trans-unit id="04587e8ad88417a273494cfa1c7cfd66">
+        <source>The comment cannot be deleted</source>
+        <target>The comment cannot be deleted</target>
+        <note>Line: 214</note>
       </trans-unit>
       <trans-unit id="c31da256e7b5fe5f65cce059ee2158c5">
         <source>The criterion cannot be saved</source>
         <target>The criterion cannot be saved</target>
         <note>Line: 249</note>
       </trans-unit>
-      <trans-unit id="1bb54e382f7dbdb260f0aa6b42bb624b">
-        <source>Criterion deleted</source>
-        <target>Criterion deleted</target>
-        <note>Line: 237</note>
+      <trans-unit id="cf5a8a6f845d4053190a48855482dc16">
+        <source>Criterion cannot be deleted</source>
+        <target>Criterion cannot be deleted</target>
+        <note>Line: 257</note>
       </trans-unit>
       <trans-unit id="254f642527b45bc260048e30704edb39">
         <source>Configuration</source>
@@ -89,16 +104,6 @@ Comment: retro compat 1.5</note>
         <source>Display only initials, e.g. John D.</source>
         <target>Display only initials, e.g. John D.</target>
         <note>Line: 376</note>
-      </trans-unit>
-      <trans-unit id="9dc1140983196141368ceda7565128a8">
-        <source>Minimum time between 2 reviews from the same user</source>
-        <target>Minimum time between 2 reviews from the same user</target>
-        <note>Line: 392</note>
-      </trans-unit>
-      <trans-unit id="b6604006fb977868227d4fdea6186697">
-        <source>Number of comments per page</source>
-        <target>Number of comments per page</target>
-        <note>Line: 399</note>
       </trans-unit>
       <trans-unit id="c9cc8cce247e49bae79f15173ce97354">
         <source>Save</source>
@@ -255,16 +260,6 @@ Comment: retro compat 1.5</note>
         <target>Active</target>
         <note>Line: 808
 Comment: retro compat 1.5</note>
-      </trans-unit>
-      <trans-unit id="04587e8ad88417a273494cfa1c7cfd66">
-        <source>The comment cannot be deleted</source>
-        <target>The comment cannot be deleted</target>
-        <note>Line: 214</note>
-      </trans-unit>
-      <trans-unit id="cf5a8a6f845d4053190a48855482dc16">
-        <source>Criterion cannot be deleted</source>
-        <target>Criterion cannot be deleted</target>
-        <note>Line: 257</note>
       </trans-unit>
     </body>
   </file>

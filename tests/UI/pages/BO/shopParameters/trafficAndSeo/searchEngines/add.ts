@@ -1,7 +1,9 @@
 // Import BO pages
 import BOBasePage from '@pages/BO/BObasePage';
 
-import type {Page} from 'playwright';
+import {
+  type Page,
+} from '@prestashop-core/ui-testing';
 
 /**
  * Add search engine page, contains selectors and functions for the page
@@ -26,8 +28,8 @@ class AddSearchEngine extends BOBasePage {
   constructor() {
     super();
 
-    this.pageTitleCreate = 'Search Engines •';
-    this.pageTitleEdit = 'Edit:';
+    this.pageTitleCreate = `Search Engines • ${global.INSTALL.SHOP_NAME}`;
+    this.pageTitleEdit = 'Editing search engine';
 
     // Form Selectors
     this.serverInput = '#search_engine_server';

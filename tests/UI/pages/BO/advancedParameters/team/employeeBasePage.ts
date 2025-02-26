@@ -1,6 +1,8 @@
 import BOBasePage from '@pages/BO/BObasePage';
 
-import type {Page} from 'playwright';
+import {
+  type Page,
+} from '@prestashop-core/ui-testing';
 
 /**
  * Employee base page, contains functions that can be used on the page
@@ -8,7 +10,9 @@ import type {Page} from 'playwright';
  * @extends BOBasePage
  */
 export default class EmployeeBasePage extends BOBasePage {
-  public readonly pageTitleEdit: string;
+  public readonly pageTitleEdit: (firstName: string, lastName: string) => string;
+
+  public readonly pageTitleEditFr: (firstName: string, lastName: string) => string;
 
   protected readonly firstNameInput: string;
 
@@ -37,7 +41,10 @@ export default class EmployeeBasePage extends BOBasePage {
   constructor() {
     super();
 
-    this.pageTitleEdit = 'Edit:';
+    this.pageTitleEdit = (firstName: string, lastName: string) => `Editing ${firstName} ${lastName}'s profile`
+      + ` • ${global.INSTALL.SHOP_NAME}`;
+    this.pageTitleEditFr = (firstName: string, lastName: string) => `Modification du profil de ${firstName} ${lastName}`
+      + ` • ${global.INSTALL.SHOP_NAME}`;
 
     // Selectors
     this.firstNameInput = '#employee_firstname';
@@ -64,7 +71,7 @@ export default class EmployeeBasePage extends BOBasePage {
    */
   async selectDefaultPage(page: Page, defaultPage: string): Promise<void> {
     await Promise.all([
-      page.click(this.defaultPageSpan),
+      page.locator(this.defaultPageSpan).click(),
       this.waitForVisibleSelector(page, `${this.defaultPageSpan}[aria-expanded='true']`),
     ]);
     await this.setValue(page, this.searchDefaultPageInput, defaultPage);
@@ -79,4 +86,4 @@ export default class EmployeeBasePage extends BOBasePage {
   async cancel(page: Page): Promise<void> {
     await this.clickAndWaitForURL(page, this.cancelButton);
   }
-};
+}

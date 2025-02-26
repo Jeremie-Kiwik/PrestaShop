@@ -1,21 +1,20 @@
 // Import utils
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
 
-// Import login steps
-import loginCommon from '@commonTests/BO/loginBO';
-
 // Import pages
-import dashboardPage from '@pages/BO/dashboard';
 import seoAndUrlsPage from '@pages/BO/shopParameters/trafficAndSeo/seoAndUrls';
 import searchEnginesPage from '@pages/BO/shopParameters/trafficAndSeo/searchEngines';
 import addSearchEnginePage from '@pages/BO/shopParameters/trafficAndSeo/searchEngines/add';
 
-// Import data
-import SearchEngineDate from '@data/faker/searchEngine';
-
 import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  type BrowserContext,
+  FakerSearchEngine,
+  type Page,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_shopParameters_trafficAndSeo_searchEngines_CRUDSearchEngines';
 
@@ -29,36 +28,42 @@ describe('BO - Shop Parameters - Traffic & SEO : Create, update and delete searc
   let page: Page;
   let numberOfSearchEngines: number = 0;
 
-  const createSearchEngineData: SearchEngineDate = new SearchEngineDate();
-  const editSearchEngineData: SearchEngineDate = new SearchEngineDate();
+  const createSearchEngineData: FakerSearchEngine = new FakerSearchEngine();
+  const editSearchEngineData: FakerSearchEngine = new FakerSearchEngine();
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'Shop Parameters > Traffic & SEO\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToSeoAndUrlsPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.shopParametersParentLink,
-      dashboardPage.trafficAndSeoLink,
+      boDashboardPage.shopParametersParentLink,
+      boDashboardPage.trafficAndSeoLink,
     );
 
     await seoAndUrlsPage.closeSfToolBar(page);
 
     const pageTitle = await seoAndUrlsPage.getPageTitle(page);
-    await expect(pageTitle).to.contain(seoAndUrlsPage.pageTitle);
+    expect(pageTitle).to.contain(seoAndUrlsPage.pageTitle);
   });
 
   it('should go to \'Search Engines\' pge', async function () {
@@ -67,14 +72,14 @@ describe('BO - Shop Parameters - Traffic & SEO : Create, update and delete searc
     await seoAndUrlsPage.goToSearchEnginesPage(page);
 
     const pageTitle = await searchEnginesPage.getPageTitle(page);
-    await expect(pageTitle).to.contain(searchEnginesPage.pageTitle);
+    expect(pageTitle).to.contain(searchEnginesPage.pageTitle);
   });
 
   it('should reset all filters and get number of search engines in BO', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'resetFilterFirst', baseContext);
 
     numberOfSearchEngines = await searchEnginesPage.resetAndGetNumberOfLines(page);
-    await expect(numberOfSearchEngines).to.be.above(0);
+    expect(numberOfSearchEngines).to.be.above(0);
   });
 
   describe('Create search engine', async () => {
@@ -84,17 +89,17 @@ describe('BO - Shop Parameters - Traffic & SEO : Create, update and delete searc
       await searchEnginesPage.goToNewSearchEnginePage(page);
 
       const pageTitle = await addSearchEnginePage.getPageTitle(page);
-      await expect(pageTitle).to.contain(addSearchEnginePage.pageTitleCreate);
+      expect(pageTitle).to.contain(addSearchEnginePage.pageTitleCreate);
     });
 
     it('should create search engine', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'createSearchEngine', baseContext);
 
       const result = await addSearchEnginePage.createEditSearchEngine(page, createSearchEngineData);
-      await expect(result).to.contain(searchEnginesPage.successfulCreationMessage);
+      expect(result).to.contain(searchEnginesPage.successfulCreationMessage);
 
       const numberOfSearchEnginesAfterCreation = await searchEnginesPage.getNumberOfElementInGrid(page);
-      await expect(numberOfSearchEnginesAfterCreation).to.equal(numberOfSearchEngines + 1);
+      expect(numberOfSearchEnginesAfterCreation).to.equal(numberOfSearchEngines + 1);
     });
   });
 
@@ -105,10 +110,10 @@ describe('BO - Shop Parameters - Traffic & SEO : Create, update and delete searc
       await searchEnginesPage.filterTable(page, 'server', createSearchEngineData.server);
 
       const numberOfSearchEnginesAfterFilter = await searchEnginesPage.getNumberOfElementInGrid(page);
-      await expect(numberOfSearchEnginesAfterFilter).to.be.at.least(1);
+      expect(numberOfSearchEnginesAfterFilter).to.be.at.least(1);
 
       const textColumn = await searchEnginesPage.getTextColumn(page, 1, 'server');
-      await expect(textColumn).to.contain(createSearchEngineData.server);
+      expect(textColumn).to.contain(createSearchEngineData.server);
     });
 
     it('should go to edit first search engine page', async function () {
@@ -117,21 +122,21 @@ describe('BO - Shop Parameters - Traffic & SEO : Create, update and delete searc
       await searchEnginesPage.goToEditSearchEnginePage(page, 1);
 
       const pageTitle = await addSearchEnginePage.getPageTitle(page);
-      await expect(pageTitle).to.contain(addSearchEnginePage.pageTitleEdit);
+      expect(pageTitle).to.contain(addSearchEnginePage.pageTitleEdit);
     });
 
     it('should edit search engine', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'editSearchEngine', baseContext);
 
       const result = await addSearchEnginePage.createEditSearchEngine(page, editSearchEngineData);
-      await expect(result).to.contain(searchEnginesPage.successfulUpdateMessage);
+      expect(result).to.contain(searchEnginesPage.successfulUpdateMessage);
     });
 
     it('should reset filter and check number of search engine', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'resetFilterAfterUpdate', baseContext);
 
       const numberOfSearchEnginesAfterUpdate = await searchEnginesPage.resetAndGetNumberOfLines(page);
-      await expect(numberOfSearchEnginesAfterUpdate).to.equal(numberOfSearchEngines + 1);
+      expect(numberOfSearchEnginesAfterUpdate).to.equal(numberOfSearchEngines + 1);
     });
   });
 
@@ -142,10 +147,10 @@ describe('BO - Shop Parameters - Traffic & SEO : Create, update and delete searc
       await searchEnginesPage.filterTable(page, 'server', editSearchEngineData.server);
 
       const numberOfSearchEnginesAfterFilter = await searchEnginesPage.getNumberOfElementInGrid(page);
-      await expect(numberOfSearchEnginesAfterFilter).to.be.at.least(1);
+      expect(numberOfSearchEnginesAfterFilter).to.be.at.least(1);
 
       const textColumn = await searchEnginesPage.getTextColumn(page, 1, 'server');
-      await expect(textColumn).to.contain(editSearchEngineData.server);
+      expect(textColumn).to.contain(editSearchEngineData.server);
     });
 
     it('should delete search engine', async function () {
@@ -153,14 +158,14 @@ describe('BO - Shop Parameters - Traffic & SEO : Create, update and delete searc
 
       // delete search engine in first row
       const result = await searchEnginesPage.deleteSearchEngine(page, 1);
-      await expect(result).to.be.contain(searchEnginesPage.successfulDeleteMessage);
+      expect(result).to.be.contain(searchEnginesPage.successfulDeleteMessage);
     });
 
     it('should reset filter and check number of searchEngine', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'resetAfterDelete', baseContext);
 
       const numberOfSearchEnginesAfterDelete = await searchEnginesPage.resetAndGetNumberOfLines(page);
-      await expect(numberOfSearchEnginesAfterDelete).to.equal(numberOfSearchEngines);
+      expect(numberOfSearchEnginesAfterDelete).to.equal(numberOfSearchEngines);
     });
   });
 });

@@ -1,19 +1,18 @@
 // Import utils
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
 
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
-
 // Import BO Pages
-import dashboardPage from '@pages/BO/dashboard';
 import imageSettingsPage from '@pages/BO/design/imageSettings';
 
-// Import data
-import ImageTypes from '@data/demo/imageTypes';
-
 import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  type BrowserContext,
+  dataImageTypes,
+  type Page,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_design_imageSettings_filterImageTypes';
 
@@ -27,37 +26,43 @@ describe('BO - Design - Positions : Filter image types table', async () => {
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'Design > Image Settings\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToImageSettingsPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.designParentLink,
-      dashboardPage.imageSettingsLink,
+      boDashboardPage.designParentLink,
+      boDashboardPage.imageSettingsLink,
     );
     await imageSettingsPage.closeSfToolBar(page);
 
     const pageTitle = await imageSettingsPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(imageSettingsPage.pageTitle);
+    expect(pageTitle).to.contains(imageSettingsPage.pageTitle);
   });
 
   it('should reset all filters and get number of image types in BO', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'resetFilterFirst', baseContext);
 
     numberOfImageTypes = await imageSettingsPage.resetAndGetNumberOfLines(page);
-    await expect(numberOfImageTypes).to.be.above(0);
+    expect(numberOfImageTypes).to.be.above(0);
   });
 
   describe('Filter image types table', async () => {
@@ -68,7 +73,7 @@ describe('BO - Design - Positions : Filter image types table', async () => {
             testIdentifier: 'filterId',
             filterType: 'input',
             filterBy: 'id_image_type',
-            filterValue: ImageTypes.first.id.toString(),
+            filterValue: dataImageTypes.imageType_1.id.toString(),
           },
       },
       {
@@ -77,7 +82,7 @@ describe('BO - Design - Positions : Filter image types table', async () => {
             testIdentifier: 'filterName',
             filterType: 'input',
             filterBy: 'name',
-            filterValue: ImageTypes.first.name,
+            filterValue: dataImageTypes.imageType_1.name,
           },
       },
       {
@@ -86,7 +91,7 @@ describe('BO - Design - Positions : Filter image types table', async () => {
             testIdentifier: 'filterWidth',
             filterType: 'input',
             filterBy: 'width',
-            filterValue: ImageTypes.first.width.toString(),
+            filterValue: dataImageTypes.imageType_1.width.toString(),
           },
       },
       {
@@ -95,7 +100,7 @@ describe('BO - Design - Positions : Filter image types table', async () => {
             testIdentifier: 'filterHeight',
             filterType: 'input',
             filterBy: 'height',
-            filterValue: ImageTypes.first.height.toString(),
+            filterValue: dataImageTypes.imageType_1.height.toString(),
           },
       },
       {
@@ -104,7 +109,7 @@ describe('BO - Design - Positions : Filter image types table', async () => {
             testIdentifier: 'filterProducts',
             filterType: 'select',
             filterBy: 'products',
-            filterValue: ImageTypes.first.productsStatus ? '1' : '0',
+            filterValue: dataImageTypes.imageType_1.productsStatus ? 'Yes' : 'No',
           },
       },
       {
@@ -113,7 +118,7 @@ describe('BO - Design - Positions : Filter image types table', async () => {
             testIdentifier: 'filterCategories',
             filterType: 'select',
             filterBy: 'categories',
-            filterValue: ImageTypes.first.categoriesStatus ? '1' : '0',
+            filterValue: dataImageTypes.imageType_1.categoriesStatus ? 'Yes' : 'No',
           },
       },
       {
@@ -122,7 +127,7 @@ describe('BO - Design - Positions : Filter image types table', async () => {
             testIdentifier: 'filterManufacturers',
             filterType: 'select',
             filterBy: 'manufacturers',
-            filterValue: ImageTypes.first.manufacturersStatus ? '1' : '0',
+            filterValue: dataImageTypes.imageType_1.manufacturersStatus ? 'Yes' : 'No',
           },
       },
       {
@@ -131,7 +136,7 @@ describe('BO - Design - Positions : Filter image types table', async () => {
             testIdentifier: 'filterSuppliers',
             filterType: 'select',
             filterBy: 'suppliers',
-            filterValue: ImageTypes.first.suppliersStatus ? '1' : '0',
+            filterValue: dataImageTypes.imageType_1.suppliersStatus ? 'Yes' : 'No',
           },
       },
       {
@@ -140,7 +145,7 @@ describe('BO - Design - Positions : Filter image types table', async () => {
             testIdentifier: 'filterStores',
             filterType: 'select',
             filterBy: 'stores',
-            filterValue: ImageTypes.first.storesStatus ? '1' : '0',
+            filterValue: dataImageTypes.imageType_1.storesStatus ? 'Yes' : 'No',
           },
       },
     ];
@@ -157,19 +162,19 @@ describe('BO - Design - Positions : Filter image types table', async () => {
         );
 
         const numberOfImageTypesAfterFilter = await imageSettingsPage.getNumberOfElementInGrid(page);
-        await expect(numberOfImageTypesAfterFilter).to.be.at.most(numberOfImageTypes);
+        expect(numberOfImageTypesAfterFilter).to.be.at.most(numberOfImageTypes);
 
         for (let row = 1; row <= numberOfImageTypesAfterFilter; row++) {
           if (test.args.filterType === 'select') {
             const status = await imageSettingsPage.getImageTypeStatus(page, row, test.args.filterBy);
-            await expect(status).to.equal(test.args.filterValue === '1');
+            expect(status).to.equal(test.args.filterValue === '1');
           } else {
             const textColumn = await imageSettingsPage.getTextColumn(
               page,
               row,
               test.args.filterBy,
             );
-            await expect(textColumn).to.contains(test.args.filterValue);
+            expect(textColumn).to.contains(test.args.filterValue);
           }
         }
       });
@@ -178,7 +183,7 @@ describe('BO - Design - Positions : Filter image types table', async () => {
         await testContext.addContextItem(this, 'testIdentifier', `${test.args.testIdentifier}Reset`, baseContext);
 
         const numberOfImageTypesAfterReset = await imageSettingsPage.resetAndGetNumberOfLines(page);
-        await expect(numberOfImageTypesAfterReset).to.equal(numberOfImageTypes);
+        expect(numberOfImageTypesAfterReset).to.equal(numberOfImageTypes);
       });
     });
   });

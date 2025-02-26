@@ -39,6 +39,12 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
+/**
+ * Responsible for handling all actions with modules.
+ *
+ * If you want to refactor this in the future and searching for usage of some methods,
+ * beware that they are called magically from ModuleController::moduleAction method.
+ */
 class ModuleManager implements ModuleManagerInterface
 {
     /** @var ModuleRepository */
@@ -82,6 +88,25 @@ class ModuleManager implements ModuleManagerInterface
         $this->translator = $translator;
         $this->eventDispatcher = $eventDispatcher;
         $this->hookManager = $hookManager;
+    }
+
+    public function upload(string $source): string
+    {
+        if (!$this->adminModuleDataProvider->isAllowedAccess(__FUNCTION__)) {
+            throw new Exception($this->translator->trans(
+                'You are not allowed to upload modules.',
+                [],
+                'Admin.Modules.Notification'
+            ));
+        }
+
+        $handler = $this->sourceFactory->getHandler($source);
+        $handler->handle($source);
+        $moduleName = $handler->getModuleName($source);
+        $module = $this->moduleRepository->getModule($moduleName);
+        $this->dispatch(ModuleManagementEvent::UPLOAD, $module);
+
+        return $moduleName;
     }
 
     public function install(string $name, $source = null): bool
@@ -155,6 +180,7 @@ class ModuleManager implements ModuleManagerInterface
 
         if ($deleteFiles && $path = $this->moduleRepository->getModulePath($name)) {
             $this->filesystem->remove($path);
+            $this->dispatch(ModuleManagementEvent::DELETE, $module);
         }
 
         $this->dispatch(ModuleManagementEvent::UNINSTALL, $module);
@@ -186,7 +212,7 @@ class ModuleManager implements ModuleManagerInterface
     {
         if (!$this->adminModuleDataProvider->isAllowedAccess(__FUNCTION__, $name)) {
             throw new Exception($this->translator->trans(
-                'You are not allowed to upgrade the module %module%.',
+                'You are not allowed to update the module %module%.',
                 ['%module%' => $name],
                 'Admin.Modules.Notification'
             ));
@@ -253,53 +279,11 @@ class ModuleManager implements ModuleManagerInterface
         return $disabled;
     }
 
-    public function enableMobile(string $name): bool
-    {
-        if (!$this->adminModuleDataProvider->isAllowedAccess(__FUNCTION__, $name)) {
-            throw new Exception($this->translator->trans(
-                'You are not allowed to enable the module %module% on mobile.',
-                ['%module%' => $name],
-                'Admin.Modules.Notification'
-            ));
-        }
-
-        $this->assertIsInstalled($name);
-
-        $this->hookManager->exec('actionBeforeEnableMobileModule', ['moduleName' => $name]);
-
-        $module = $this->moduleRepository->getModule($name);
-        $enabled = $module->onMobileEnable();
-        $this->dispatch(ModuleManagementEvent::ENABLE_MOBILE, $module);
-
-        return $enabled;
-    }
-
-    public function disableMobile(string $name): bool
-    {
-        if (!$this->adminModuleDataProvider->isAllowedAccess(__FUNCTION__, $name)) {
-            throw new Exception($this->translator->trans(
-                'You are not allowed to disable the module %module% on mobile.',
-                ['%module%' => $name],
-                'Admin.Modules.Notification'
-            ));
-        }
-
-        $this->assertIsInstalled($name);
-
-        $this->hookManager->exec('actionBeforeDisableMobileModule', ['moduleName' => $name]);
-
-        $module = $this->moduleRepository->getModule($name);
-        $disabled = $module->onMobileDisable();
-        $this->dispatch(ModuleManagementEvent::DISABLE_MOBILE, $module);
-
-        return $disabled;
-    }
-
     public function reset(string $name, bool $keepData = false): bool
     {
         if (
-            !$this->adminModuleDataProvider->isAllowedAccess('install') ||
-            !$this->adminModuleDataProvider->isAllowedAccess('uninstall', $name)
+            !$this->adminModuleDataProvider->isAllowedAccess('install')
+            || !$this->adminModuleDataProvider->isAllowedAccess('uninstall', $name)
         ) {
             throw new Exception($this->translator->trans(
                 'You are not allowed to reset the module %module%.',
@@ -314,7 +298,7 @@ class ModuleManager implements ModuleManagerInterface
 
         $module = $this->moduleRepository->getModule($name);
 
-        if ($keepData && method_exists($module, 'reset')) {
+        if ($keepData && method_exists($module->getInstance(), 'reset')) {
             $reset = $module->onReset();
             $this->dispatch(ModuleManagementEvent::RESET, $module);
         } else {
@@ -347,15 +331,15 @@ class ModuleManager implements ModuleManagerInterface
             $error = array_pop($errors);
             if (empty($error)) {
                 $error = $this->translator->trans(
-                    'Unfortunately, the module did not return additional details.',
-                    [],
+                    'Unfortunately, the module %module% did not return additional details.',
+                    ['%module%' => $name],
                     'Admin.Modules.Notification'
                 );
             }
         } else {
             $error = $this->translator->trans(
-                'The module is invalid and cannot be loaded.',
-                [],
+                'The module %module% is invalid and cannot be loaded.',
+                ['%module%' => $name],
                 'Admin.Modules.Notification'
             );
         }

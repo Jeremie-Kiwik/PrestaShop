@@ -1,20 +1,20 @@
 // Import utils
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
 
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
-
 // Import pages
-import dashboardPage from '@pages/BO/dashboard';
-import orderSettingsPage from '@pages/BO/shopParameters/orderSettings';
 import statusesPage from '@pages/BO/shopParameters/orderSettings/statuses';
 
-// Import data
-import OrderStatuses from '@data/demo/orderStatuses';
+import {
+  boDashboardPage,
+  boLoginPage,
+  boOrderSettingsPage,
+  type BrowserContext,
+  dataOrderStatuses,
+  type Page,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
 
 const baseContext: string = 'functional_BO_shopParameters_orderSettings_statuses_statuses_quickEdit';
 
@@ -32,54 +32,60 @@ describe('BO - Shop Parameters - Order Settings - Statuses : Quick edit order st
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'Shop Parameters > Order Settings\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToOrderSettingsPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.shopParametersParentLink,
-      dashboardPage.orderSettingsLink,
+      boDashboardPage.shopParametersParentLink,
+      boDashboardPage.orderSettingsLink,
     );
 
-    const pageTitle = await orderSettingsPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(orderSettingsPage.pageTitle);
+    const pageTitle = await boOrderSettingsPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boOrderSettingsPage.pageTitle);
   });
 
   it('should go to \'Statuses\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToStatusesPage', baseContext);
 
-    await orderSettingsPage.goToStatusesPage(page);
+    await boOrderSettingsPage.goToStatusesPage(page);
 
     const pageTitle = await statusesPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(statusesPage.pageTitle);
+    expect(pageTitle).to.contains(statusesPage.pageTitle);
   });
 
   it('should filter by status name', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'filterByName', baseContext);
 
     numberOfOrderStatuses = await statusesPage.resetAndGetNumberOfLines(page, tableName);
-    await expect(numberOfOrderStatuses).to.be.above(0);
+    expect(numberOfOrderStatuses).to.be.above(0);
 
-    await statusesPage.filterTable(page, tableName, 'input', 'name', OrderStatuses.shipped.name);
+    await statusesPage.filterTable(page, tableName, 'input', 'name', dataOrderStatuses.shipped.name);
 
     const numberOfLinesAfterFilter = await statusesPage.getNumberOfElementInGrid(page, tableName);
-    await expect(numberOfLinesAfterFilter).to.be.above(0);
+    expect(numberOfLinesAfterFilter).to.be.above(0);
 
     for (let row = 1; row <= numberOfLinesAfterFilter; row++) {
       const textColumn = await statusesPage.getTextColumn(page, tableName, row, 'name');
-      await expect(textColumn).to.contains(OrderStatuses.shipped.name);
+      expect(textColumn).to.contains(dataOrderStatuses.shipped.name);
     }
   });
 
@@ -122,18 +128,19 @@ describe('BO - Shop Parameters - Order Settings - Statuses : Quick edit order st
 
       const isActionPerformed = await statusesPage.setStatus(
         page,
+        tableName,
         1,
         orderStatus.args.columnName,
         orderStatus.args.enable,
       );
 
       if (isActionPerformed) {
-        const resultMessage = await statusesPage.getGrowlMessageContent(page);
-        await expect(resultMessage).to.contains(statusesPage.successfulUpdateStatusMessage);
+        const resultMessage = await statusesPage.getAlertSuccessBlockParagraphContent(page);
+        expect(resultMessage).to.contains(statusesPage.successfulUpdateStatusMessage);
       }
 
-      const currentStatus = await statusesPage.getStatus(page, 1, orderStatus.args.columnName);
-      await expect(currentStatus).to.be.equal(orderStatus.args.enable);
+      const currentStatus = await statusesPage.getStatus(page, tableName, 1, orderStatus.args.columnName);
+      expect(currentStatus).to.be.equal(orderStatus.args.enable);
     });
   });
 
@@ -141,6 +148,6 @@ describe('BO - Shop Parameters - Order Settings - Statuses : Quick edit order st
     await testContext.addContextItem(this, 'testIdentifier', 'resetFilter', baseContext);
 
     const numberOfLinesAfterReset = await statusesPage.resetAndGetNumberOfLines(page, tableName);
-    await expect(numberOfLinesAfterReset).to.equal(numberOfOrderStatuses);
+    expect(numberOfLinesAfterReset).to.equal(numberOfOrderStatuses);
   });
 });

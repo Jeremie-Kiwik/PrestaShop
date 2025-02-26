@@ -1,29 +1,31 @@
-import Groups from '@data/demo/groups';
-import type GroupData from '@data/faker/group';
-import ImportData from '@data/faker/import';
-import type {ImportCustomer} from '@data/types/import';
+import {
+  dataGroups,
+  FakerImport,
+  type FakerGroup,
+  type ImportCustomer,
+} from '@prestashop-core/ui-testing';
 
 import {faker} from '@faker-js/faker';
 
-const groups: string[] = Object.values(Groups).map((group: GroupData) => group.name);
+const groups: string[] = Object.values(dataGroups).map((group: FakerGroup) => group.name);
 
 const records: ImportCustomer[] = [];
 
 function createRecord(): ImportCustomer[] {
   for (let i: number = 0; i < 10; i++) {
-    const lastName = faker.name.lastName();
+    const lastName = faker.person.lastName();
     records.push({
       id: i + 3,
-      active: faker.datatype.number({min: 0, max: 1}),
-      title: faker.datatype.number({min: 1, max: 2}),
+      active: faker.number.int({min: 0, max: 1}),
+      title: faker.number.int({min: 1, max: 2}),
       email: `test.${lastName}@prestashop.com`,
       password: faker.internet.password(),
-      birthdate: faker.date.between('1950-01-01', '2000-12-31').toISOString().slice(0, 10),
+      birthdate: faker.date.between({from: '1950-01-01', to: '2000-12-31'}).toISOString().slice(0, 10),
       lastName,
-      firstName: faker.name.firstName(),
-      newsletter: faker.datatype.number({min: 0, max: 1}),
-      optIn: faker.datatype.number({min: 0, max: 1}),
-      registrationDate: faker.date.past(2).toISOString().slice(0, 10),
+      firstName: faker.person.firstName(),
+      newsletter: faker.number.int({min: 0, max: 1}),
+      optIn: faker.number.int({min: 0, max: 1}),
+      registrationDate: faker.date.past({years: 2}).toISOString().slice(0, 10),
       groups: faker.helpers.arrayElement(groups),
       defaultGroup: faker.helpers.arrayElement(groups),
     });
@@ -32,7 +34,7 @@ function createRecord(): ImportCustomer[] {
   return records;
 }
 
-export default new ImportData({
+export default new FakerImport({
   entity: 'Customers',
   header: [
     {id: 'id', title: 'Customer ID'},

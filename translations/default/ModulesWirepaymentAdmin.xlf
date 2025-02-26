@@ -37,6 +37,21 @@
         <target>Account owner is required.</target>
         <note>Line: 139</note>
       </trans-unit>
+      <trans-unit id="16640a585e69b465d5779a3c3f64ee30">
+        <source>Bank address is required.</source>
+        <target>Bank address is required.</target>
+        <note>Line: 146</note>
+      </trans-unit>
+      <trans-unit id="873a2778bdb25b9dcca6de640216c4a9">
+        <source>Reservation period</source>
+        <target>Reservation period</target>
+        <note>Line: 334</note>
+      </trans-unit>
+      <trans-unit id="aecd74781ae43c61954bbc270d0d801e">
+        <source>The %field% is invalid. Please enter a positive integer.</source>
+        <target>The %field% is invalid. Please enter a positive integer.</target>
+        <note>Line: 155</note>
+      </trans-unit>
       <trans-unit id="8bc212f48680748479bbd322d4d73d3f">
         <source>Account details</source>
         <target>Account details</target>
@@ -62,11 +77,6 @@
         <target>Customization</target>
         <note>Line: 328</note>
       </trans-unit>
-      <trans-unit id="873a2778bdb25b9dcca6de640216c4a9">
-        <source>Reservation period</source>
-        <target>Reservation period</target>
-        <note>Line: 334</note>
-      </trans-unit>
       <trans-unit id="120cf2b5eab7f28e5fb03b8fb7bbd07b">
         <source>Number of days the items remain reserved</source>
         <target>Number of days the items remain reserved</target>
@@ -91,16 +101,6 @@
         <source>Your country's legislation may require you to send the invitation to pay by email only. Disabling the option will hide the invitation on the confirmation page.</source>
         <target>Your country's legislation may require you to send the invitation to pay by email only. Disabling the option will hide the invitation on the confirmation page.</target>
         <note>Line: 350</note>
-      </trans-unit>
-      <trans-unit id="16640a585e69b465d5779a3c3f64ee30">
-        <source>Bank address is required.</source>
-        <target>Bank address is required.</target>
-        <note>Line: 146</note>
-      </trans-unit>
-      <trans-unit id="aecd74781ae43c61954bbc270d0d801e">
-        <source>The %field% is invalid. Please enter a positive integer.</source>
-        <target>The %field% is invalid. Please enter a positive integer.</target>
-        <note>Line: 155</note>
       </trans-unit>
     </body>
   </file>

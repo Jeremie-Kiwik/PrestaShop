@@ -1,6 +1,8 @@
 import BOBasePage from '@pages/BO/BObasePage';
 
-import type {Page} from 'playwright';
+import {
+  type Page,
+} from '@prestashop-core/ui-testing';
 
 /**
  * Contacts page, contains functions that can be used on the page
@@ -121,8 +123,9 @@ class Contacts extends BOBasePage {
    */
   async resetFilter(page: Page): Promise<void> {
     if (await this.elementVisible(page, this.filterResetButton, 2000)) {
-      await page.click(this.filterResetButton);
-      await this.elementNotVisible(page, this.filterResetButton, 2000);
+      await page.locator(this.filterResetButton).click();
+      await page.mouse.move(0, 0);
+      await this.waitForHiddenSelector(page, this.filterResetButton, 2000);
     }
   }
 
@@ -155,7 +158,8 @@ class Contacts extends BOBasePage {
   async filterContacts(page: Page, filterBy: string, value: string = ''): Promise<void> {
     await this.setValue(page, this.contactFilterInput(filterBy), value.toString());
     // click on search
-    await this.clickAndWaitForURL(page, this.filterSearchButton);
+    await page.locator(this.filterSearchButton).click();
+    await this.waitForVisibleSelector(page, this.filterResetButton);
   }
 
   /**
@@ -215,7 +219,7 @@ class Contacts extends BOBasePage {
   async deleteContact(page: Page, row: number): Promise<string> {
     // Click on dropDown
     await Promise.all([
-      page.click(this.listTableToggleDropDown(row)),
+      page.locator(this.listTableToggleDropDown(row)).click(),
       this.waitForVisibleSelector(
         page,
         `${this.listTableToggleDropDown(row)}[aria-expanded='true']`,
@@ -224,7 +228,7 @@ class Contacts extends BOBasePage {
 
     // Click on delete
     await Promise.all([
-      page.click(this.deleteRowLink(row)),
+      page.locator(this.deleteRowLink(row)).click(),
       this.waitForVisibleSelector(page, `${this.confirmDeleteModal}.show`),
     ]);
     await this.confirmDeleteContact(page);
@@ -248,18 +252,18 @@ class Contacts extends BOBasePage {
   async deleteContactsBulkActions(page: Page): Promise<string> {
     // Click on Select All
     await Promise.all([
-      page.$eval(this.selectAllRowsLabel, (el: HTMLElement) => el.click()),
+      page.locator(this.selectAllRowsLabel).evaluate((el: HTMLElement) => el.click()),
       this.waitForVisibleSelector(page, `${this.bulkActionsToggleButton}:not([disabled])`),
     ]);
     // Click on Button Bulk actions
     await Promise.all([
-      page.click(this.bulkActionsToggleButton),
+      page.locator(this.bulkActionsToggleButton).click(),
       this.waitForVisibleSelector(page, this.bulkActionsToggleButton),
     ]);
 
     // Click on delete and wait for modal
     await Promise.all([
-      page.click(this.bulkActionsDeleteButton),
+      page.locator(this.bulkActionsDeleteButton).click(),
       this.waitForVisibleSelector(page, `${this.confirmDeleteModal}.show`),
     ]);
 

@@ -1,10 +1,11 @@
 // Import pages
 import BOBasePage from '@pages/BO/BObasePage';
 
-// Import data
-import type StoreData from '@data/faker/store';
+import {
+  type Page,
 
-import type {Page} from 'playwright';
+  type FakerStore,
+} from '@prestashop-core/ui-testing';
 
 /**
  * Stores page, contains selectors and functions for the page
@@ -305,7 +306,7 @@ class Stores extends BOBasePage {
    * @param columnName {string} Column name of the value to return
    * @return {Promise<string>}
    */
-  async getTextColumn(page: Page, row: number, columnName: string) {
+  async getTextColumn(page: Page, row: number, columnName: string): Promise<string> {
     let columnSelector;
 
     switch (columnName) {
@@ -392,7 +393,7 @@ class Stores extends BOBasePage {
     const actualStatus = await this.getStoreStatus(page, row);
 
     if (actualStatus !== wantedStatus) {
-      await page.click(this.tableColumnStatus(row));
+      await page.locator(this.tableColumnStatus(row)).click();
     }
   }
 
@@ -414,11 +415,11 @@ class Stores extends BOBasePage {
    */
   async deleteStore(page: Page, row: number): Promise<string> {
     await Promise.all([
-      page.click(this.tableColumnActionsToggleButton(row)),
+      page.locator(this.tableColumnActionsToggleButton(row)).click(),
       this.waitForVisibleSelector(page, this.tableColumnActionsDeleteLink(row)),
     ]);
 
-    await page.click(this.tableColumnActionsDeleteLink(row));
+    await page.locator(this.tableColumnActionsDeleteLink(row)).click();
 
     // Confirm delete action
     await this.clickAndWaitForURL(page, this.deleteModalButtonYes);
@@ -436,12 +437,12 @@ class Stores extends BOBasePage {
    */
   async selectAllRow(page: Page): Promise<void> {
     await Promise.all([
-      page.click(this.bulkActionMenuButton),
+      page.locator(this.bulkActionMenuButton).click(),
       this.waitForVisibleSelector(page, this.selectAllLink),
     ]);
 
     await Promise.all([
-      page.click(this.selectAllLink),
+      page.locator(this.selectAllLink).click(),
       this.waitForHiddenSelector(page, this.selectAllLink),
     ]);
   }
@@ -458,7 +459,7 @@ class Stores extends BOBasePage {
 
     // Perform bulk update status
     await Promise.all([
-      page.click(this.bulkActionMenuButton),
+      page.locator(this.bulkActionMenuButton).click(),
       this.waitForVisibleSelector(
         page,
         this.enableSelectionLink,
@@ -485,7 +486,7 @@ class Stores extends BOBasePage {
 
     // Perform delete
     await Promise.all([
-      page.click(this.bulkActionMenuButton),
+      page.locator(this.bulkActionMenuButton).click(),
       this.waitForVisibleSelector(page, this.bulkDeleteLink),
     ]);
 
@@ -547,10 +548,10 @@ class Stores extends BOBasePage {
   /**
    * Se contact details
    * @param page {Page} Browser tab
-   * @param storeContactData {StoreData} Store contact data to set on contact detail form
+   * @param storeContactData {FakerStore} Store contact data to set on contact detail form
    * @returns {Promise<string>}
    */
-  async setContactDetails(page: Page, storeContactData: StoreData): Promise<string> {
+  async setContactDetails(page: Page, storeContactData: FakerStore): Promise<string> {
     // Set name
     await this.setValue(page, this.nameInput, storeContactData.name);
 
@@ -570,7 +571,7 @@ class Stores extends BOBasePage {
     await this.setValue(page, this.faxInput, storeContactData.fax);
 
     // Save contact details
-    await page.click(this.saveButton);
+    await page.locator(this.saveButton).click();
 
     // Return successful message
     return this.getAlertSuccessBlockParagraphContent(page);

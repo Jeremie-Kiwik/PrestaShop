@@ -1,6 +1,8 @@
 import BOBasePage from '@pages/BO/BObasePage';
 
-import type {Page} from 'playwright';
+import {
+  type Page,
+} from '@prestashop-core/ui-testing';
 
 /**
  * BO Payment preferences page, contains texts, selectors and functions to use on the page.
@@ -66,7 +68,7 @@ class Preferences extends BOBasePage {
 
     await this.setCheckedWithIcon(page, this.euroCurrencyRestrictionsCheckbox(paymentModule), valueWanted);
 
-    await page.click(this.currencyRestrictionsSaveButton);
+    await page.locator(this.currencyRestrictionsSaveButton).click();
     return this.getAlertSuccessBlockParagraphContent(page);
   }
 
@@ -82,7 +84,7 @@ class Preferences extends BOBasePage {
     await this.waitForAttachedSelector(page, `${this.paymentModuleCheckbox(paymentModule, group)} + i`);
     await this.setCheckedWithIcon(page, this.paymentModuleCheckbox(paymentModule, group), valueWanted);
 
-    await page.click(this.groupRestrictionsSaveButton);
+    await page.locator(this.groupRestrictionsSaveButton).click();
     return this.getAlertSuccessBlockParagraphContent(page);
   }
 
@@ -101,7 +103,7 @@ class Preferences extends BOBasePage {
     );
     await this.setCheckedWithIcon(page, this.countryRestrictionsCheckbox(paymentModule, countryID), valueWanted);
 
-    await page.click(this.currencyRestrictionsSaveButton);
+    await page.locator(this.currencyRestrictionsSaveButton).click();
     return this.getAlertSuccessBlockParagraphContent(page);
   }
 
@@ -120,7 +122,7 @@ class Preferences extends BOBasePage {
     );
     await this.setCheckedWithIcon(page, this.carrierRestrictionsCheckbox(paymentModule, carrierID), valueWanted);
 
-    await page.click(this.carrierRestrictionSaveButton);
+    await page.locator(this.carrierRestrictionSaveButton).click();
     return this.getAlertSuccessBlockParagraphContent(page);
   }
 }

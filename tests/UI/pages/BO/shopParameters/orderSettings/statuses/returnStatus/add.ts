@@ -1,10 +1,10 @@
 // Import pages
 import BOBasePage from '@pages/BO/BObasePage';
 
-// Import data
-import OrderReturnStatusData from '@data/faker/orderReturnStatus';
-
-import {Page} from 'playwright';
+import {
+  type FakerOrderReturnStatus,
+  type Page,
+} from '@prestashop-core/ui-testing';
 
 /**
  * Add order return status page, contains selectors and functions for the page
@@ -14,7 +14,7 @@ import {Page} from 'playwright';
 class AddOrderReturnStatus extends BOBasePage {
   public readonly pageTitleCreate: string;
 
-  public readonly pageTitleEdit: string;
+  public readonly pageTitleEdit: (name: string) => string;
 
   private readonly nameInput: string;
 
@@ -29,13 +29,13 @@ class AddOrderReturnStatus extends BOBasePage {
   constructor() {
     super();
 
-    this.pageTitleCreate = 'Statuses > Add new •';
-    this.pageTitleEdit = 'Statuses > Edit •';
+    this.pageTitleCreate = `New return status • ${global.INSTALL.SHOP_NAME}`;
+    this.pageTitleEdit = (name: string) => `Editing return status ${name} • ${global.INSTALL.SHOP_NAME}`;
 
     // Form selectors
-    this.nameInput = '#name_1';
-    this.colorInput = '#color_0';
-    this.saveButton = '#order_return_state_form_submit_btn';
+    this.nameInput = '#order_return_state_name_1';
+    this.colorInput = '#order_return_state_color';
+    this.saveButton = '#save-button';
   }
 
   /* Methods */
@@ -43,20 +43,20 @@ class AddOrderReturnStatus extends BOBasePage {
   /**
    * Fill order return status form
    * @param page {Page} Browser tab
-   * @param orderReturnStatusData {OrderReturnStatusData} Data to set on order return status form
+   * @param orderReturnStatusData {FakerOrderReturnStatus} Data to set on order return status form
    * @return {Promise<string>}
    */
-  async setOrderReturnStatus(page: Page, orderReturnStatusData: OrderReturnStatusData): Promise<string> {
+  async setOrderReturnStatus(page: Page, orderReturnStatusData: FakerOrderReturnStatus): Promise<string> {
     await this.setValue(page, this.nameInput, orderReturnStatusData.name);
 
     // Set color
-    await this.setValue(page, this.colorInput, orderReturnStatusData.color);
+    await this.setInputValue(page, this.colorInput, orderReturnStatusData.color);
 
     // Save order return status
     await this.clickAndWaitForURL(page, this.saveButton);
 
     // Return successful message
-    return this.getAlertSuccessBlockContent(page);
+    return this.getAlertSuccessBlockParagraphContent(page);
   }
 }
 

@@ -1,23 +1,23 @@
 // Import utils
-import basicHelper from '@utils/basicHelper';
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
 
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
-
 // Import pages
-import dashboardPage from '@pages/BO/dashboard';
-import searchPage from '@pages/BO/shopParameters/search';
 import tagsPage from '@pages/BO/shopParameters/search/tags';
 import addTagPage from '@pages/BO/shopParameters/search/tags/add';
 
-// Import data
-import Languages from '@data/demo/languages';
-import TagData from '@data/faker/tag';
-
 import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  boSearchPage,
+  type BrowserContext,
+  dataLanguages,
+  dataProducts,
+  FakerSearchTag,
+  type Page,
+  utilsCore,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_shopParameters_search_tags_filterSortAndPagination';
 
@@ -35,39 +35,45 @@ describe('BO - Shop Parameters - Search : Filter, sort and pagination tag in BO'
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'ShopParameters > Search\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToSearchPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.shopParametersParentLink,
-      dashboardPage.searchLink,
+      boDashboardPage.shopParametersParentLink,
+      boDashboardPage.searchLink,
     );
 
-    const pageTitle = await searchPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(searchPage.pageTitle);
+    const pageTitle = await boSearchPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boSearchPage.pageTitle);
   });
 
   it('should go to \'Tags\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToTagsPage', baseContext);
 
-    await searchPage.goToTagsPage(page);
+    await boSearchPage.goToTagsPage(page);
     numberOfTags = await tagsPage.getNumberOfElementInGrid(page);
 
     const pageTitle = await tagsPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(tagsPage.pageTitle);
+    expect(pageTitle).to.contains(tagsPage.pageTitle);
   });
 
   // 1 - Create tag
@@ -75,7 +81,11 @@ describe('BO - Shop Parameters - Search : Filter, sort and pagination tag in BO'
     const creationTests: number[] = new Array(21).fill(0, 0, 21);
 
     creationTests.forEach((test: number, index: number) => {
-      const tagData: TagData = new TagData({name: `todelete${index}`, language: Languages.english.name});
+      const tagData: FakerSearchTag = new FakerSearchTag({
+        name: `todelete${index}`,
+        language: dataLanguages.english.name,
+        products: dataProducts.demo_19.name,
+      });
 
       it('should go to add new tag page', async function () {
         await testContext.addContextItem(this, 'testIdentifier', `goToAddTagPage${index}`, baseContext);
@@ -83,17 +93,17 @@ describe('BO - Shop Parameters - Search : Filter, sort and pagination tag in BO'
         await tagsPage.goToAddNewTagPage(page);
 
         const pageTitle = await addTagPage.getPageTitle(page);
-        await expect(pageTitle).to.contains(addTagPage.pageTitleCreate);
+        expect(pageTitle).to.contains(addTagPage.pageTitleCreate);
       });
 
       it(`should create tag n° ${index + 1} and check result`, async function () {
         await testContext.addContextItem(this, 'testIdentifier', `createTag${index}`, baseContext);
 
         const textResult = await addTagPage.setTag(page, tagData);
-        await expect(textResult).to.contains(tagsPage.successfulCreationMessage);
+        expect(textResult).to.contains(tagsPage.successfulCreationMessage);
 
         const numberOfElementAfterCreation = await tagsPage.getNumberOfElementInGrid(page);
-        await expect(numberOfElementAfterCreation).to.be.equal(numberOfTags + 1 + index);
+        expect(numberOfElementAfterCreation).to.be.equal(numberOfTags + 1 + index);
       });
     });
   });
@@ -102,7 +112,7 @@ describe('BO - Shop Parameters - Search : Filter, sort and pagination tag in BO'
   describe('Filter tags table', async () => {
     const tests = [
       {args: {testIdentifier: 'filterById', filterBy: 'id_tag', filterValue: '5'}},
-      {args: {testIdentifier: 'filterByLanguage', filterBy: 'l!name', filterValue: Languages.english.name}},
+      {args: {testIdentifier: 'filterByLanguage', filterBy: 'l!name', filterValue: dataLanguages.english.name}},
       {args: {testIdentifier: 'filterByName', filterBy: 'a!name', filterValue: 'todelete10'}},
       {args: {testIdentifier: 'filterByProducts', filterBy: 'products', filterValue: '0'}},
     ];
@@ -114,11 +124,11 @@ describe('BO - Shop Parameters - Search : Filter, sort and pagination tag in BO'
         await tagsPage.filterTable(page, test.args.filterBy, test.args.filterValue);
 
         const numberOfLinesAfterFilter = await tagsPage.getNumberOfElementInGrid(page);
-        await expect(numberOfLinesAfterFilter).to.be.at.most(numberOfTags + 21);
+        expect(numberOfLinesAfterFilter).to.be.at.most(numberOfTags + 21);
 
         for (let row = 1; row <= numberOfLinesAfterFilter; row++) {
           const textColumn = await tagsPage.getTextColumn(page, row, test.args.filterBy);
-          await expect(textColumn).to.contains(test.args.filterValue);
+          expect(textColumn).to.contains(test.args.filterValue);
         }
       });
 
@@ -126,7 +136,7 @@ describe('BO - Shop Parameters - Search : Filter, sort and pagination tag in BO'
         await testContext.addContextItem(this, 'testIdentifier', `${test.args.testIdentifier}Reset`, baseContext);
 
         const numberOfLinesAfterReset = await tagsPage.resetAndGetNumberOfLines(page);
-        await expect(numberOfLinesAfterReset).to.equal(numberOfTags + 21);
+        expect(numberOfLinesAfterReset).to.equal(numberOfTags + 21);
       });
     });
   });
@@ -190,20 +200,20 @@ describe('BO - Shop Parameters - Search : Filter, sort and pagination tag in BO'
           const nonSortedTableFloat: number[] = nonSortedTable.map((text: string): number => parseFloat(text));
           const sortedTableFloat: number[] = sortedTable.map((text: string): number => parseFloat(text));
 
-          const expectedResult: number[] = await basicHelper.sortArrayNumber(nonSortedTableFloat);
+          const expectedResult: number[] = await utilsCore.sortArrayNumber(nonSortedTableFloat);
 
           if (test.args.sortDirection === 'up') {
-            await expect(sortedTableFloat).to.deep.equal(expectedResult);
+            expect(sortedTableFloat).to.deep.equal(expectedResult);
           } else {
-            await expect(sortedTableFloat).to.deep.equal(expectedResult.reverse());
+            expect(sortedTableFloat).to.deep.equal(expectedResult.reverse());
           }
         } else {
-          const expectedResult = await basicHelper.sortArray(nonSortedTable);
+          const expectedResult = await utilsCore.sortArray(nonSortedTable);
 
           if (test.args.sortDirection === 'up') {
-            await expect(sortedTable).to.deep.equal(expectedResult);
+            expect(sortedTable).to.deep.equal(expectedResult);
           } else {
-            await expect(sortedTable).to.deep.equal(expectedResult.reverse());
+            expect(sortedTable).to.deep.equal(expectedResult.reverse());
           }
         }
       });
@@ -252,7 +262,7 @@ describe('BO - Shop Parameters - Search : Filter, sort and pagination tag in BO'
 
       for (let i = 1; i <= numberOfLinesAfterFilter; i++) {
         const textColumn = await tagsPage.getTextColumn(page, i, 'a!name');
-        await expect(textColumn).to.contains('todelete');
+        expect(textColumn).to.contains('todelete');
       }
     });
 
@@ -260,7 +270,7 @@ describe('BO - Shop Parameters - Search : Filter, sort and pagination tag in BO'
       await testContext.addContextItem(this, 'testIdentifier', 'bulkDeleteTags', baseContext);
 
       const deleteTextResult = await tagsPage.bulkDelete(page);
-      await expect(deleteTextResult).to.be.contains(tagsPage.successfulMultiDeleteMessage);
+      expect(deleteTextResult).to.be.contains(tagsPage.successfulMultiDeleteMessage);
     });
   });
 });

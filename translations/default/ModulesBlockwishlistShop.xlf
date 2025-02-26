@@ -130,11 +130,6 @@
   </file>
   <file original="modules/blockwishlist/views/templates/components/modals/add-to-wishlist.tpl" source-language="en-US" target-language="en" datatype="plaintext">
     <body>
-      <trans-unit id="2d96bb66d8541a89620d3c158ceef42b">
-        <source>Add to wishlist</source>
-        <target>Add to wishlist</target>
-        <note>Line: 37</note>
-      </trans-unit>
       <trans-unit id="31323452eb311e8fbef81c75d3062659">
         <source>No list found.</source>
         <target>No list found.</target>
@@ -188,15 +183,15 @@
         <target>Delete</target>
         <note>Line: 33</note>
       </trans-unit>
-      <trans-unit id="ea4788705e6873b424c65e91c2846b19">
-        <source>Cancel</source>
-        <target>Cancel</target>
-        <note>Line: 31</note>
-      </trans-unit>
     </body>
   </file>
   <file original="modules/blockwishlist/views/templates/components/modals/login.tpl" source-language="en-US" target-language="en" datatype="plaintext">
     <body>
+      <trans-unit id="ea4788705e6873b424c65e91c2846b19">
+        <source>Cancel</source>
+        <target>Cancel</target>
+        <note>Line: 23</note>
+      </trans-unit>
       <trans-unit id="b6d4223e60986fa4c9af77ee5f7149c5">
         <source>Sign in</source>
         <target>Sign in</target>
@@ -345,6 +340,20 @@
         <source>Return to wishlists</source>
         <target>Return to wishlists</target>
         <note>Line: 46</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="themes/hummingbird/modules/blockwishlist/views/templates/components/modals/add-to-wishlist.tpl" source-language="en-US" target-language="en" datatype="plaintext">
+    <body>
+      <trans-unit id="2d96bb66d8541a89620d3c158ceef42b">
+        <source>Add to wishlist</source>
+        <target>Add to wishlist</target>
+        <note>Line: 20</note>
+      </trans-unit>
+      <trans-unit id="d3d2e617335f08df83599665eef8a418">
+        <source>Close</source>
+        <target>Close</target>
+        <note>Line: 26</note>
       </trans-unit>
     </body>
   </file>

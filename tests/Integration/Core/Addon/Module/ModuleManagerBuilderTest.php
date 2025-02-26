@@ -123,7 +123,7 @@ class ModuleManagerBuilderTest extends TestCase
         }
 
         // Remove overrides
-        @unlink(_PS_ROOT_DIR_ . '/override/controllers/admin/AdminProductsController.php');
+        @unlink(_PS_ROOT_DIR_ . '/override/controllers/admin/DummyAdminController.php');
         @unlink(_PS_ROOT_DIR_ . '/override/classes/Cart.php');
 
         // Reset modules folder
@@ -166,15 +166,19 @@ class ModuleManagerBuilderTest extends TestCase
         $actual_override_cart = $this->cleanup(file_get_contents(_PS_ROOT_DIR_ . '/override/classes/Cart.php'));
         $expected_override_cart = $this->cleanup(file_get_contents($resource_path . 'classes/Cart.php'));
 
-        $this->assertEquals($expected_override_cart, $actual_override_cart);
+        $this->assertEquals(
+            $expected_override_cart,
+            $actual_override_cart,
+            'Cart.php file different'
+        );
 
-        $actual_override_admin_product = $this->cleanup(file_get_contents(_PS_ROOT_DIR_ . '/override/controllers/admin/AdminProductsController.php'));
-        $expected_override_admin_product = $this->cleanup(file_get_contents($resource_path . '/controllers/admin/AdminProductsController.php'));
+        $actual_override_admin_product = $this->cleanup(file_get_contents(_PS_ROOT_DIR_ . '/override/controllers/admin/DummyAdminController.php'));
+        $expected_override_admin_product = $this->cleanup(file_get_contents($resource_path . '/controllers/admin/DummyAdminController.php'));
 
         $this->assertEquals(
             $actual_override_admin_product,
             $expected_override_admin_product,
-            'AdminProductsController.php file different'
+            'DummyAdminController.php file different'
         );
 
         // Then it checks that the overrides are removed once the modules are uninstalled.
@@ -182,13 +186,8 @@ class ModuleManagerBuilderTest extends TestCase
             $this->assertTrue((bool) $this->moduleManager->uninstall($name));
         }
 
-        if (method_exists($this, 'assertFileDoesNotExist')) {
-            $this->assertFileDoesNotExist($actual_override_cart);
-            $this->assertFileDoesNotExist($actual_override_admin_product);
-        } else {
-            $this->assertFileNotExists($actual_override_cart);
-            $this->assertFileNotExists($actual_override_admin_product);
-        }
+        $this->assertFileDoesNotExist($actual_override_cart);
+        $this->assertFileDoesNotExist($actual_override_admin_product);
     }
 
     public function testOverrideConflictAtInstall(): void

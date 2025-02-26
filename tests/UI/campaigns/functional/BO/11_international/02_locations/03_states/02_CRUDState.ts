@@ -1,21 +1,18 @@
-// Import utils
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
+import {expect} from 'chai';
 
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
-
-// Import pages
-import dashboardPage from '@pages/BO/dashboard';
-import zonesPage from '@pages/BO/international/locations';
 import statesPage from '@pages/BO/international/locations/states';
 import addStatePage from '@pages/BO/international/locations/states/add';
 
-// Import data
-import StateData from '@data/faker/state';
-
-import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  boZonesPages,
+  type BrowserContext,
+  FakerState,
+  type Page,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_international_locations_states_CRUDState';
 
@@ -24,51 +21,57 @@ describe('BO - International - States : CRUD state', async () => {
   let page: Page;
   let numberOfStates: number = 0;
 
-  const createStateData: StateData = new StateData();
-  const editStateData: StateData = new StateData();
+  const createStateData: FakerState = new FakerState();
+  const editStateData: FakerState = new FakerState();
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'International > Locations\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToLocationsPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.internationalParentLink,
-      dashboardPage.locationsLink,
+      boDashboardPage.internationalParentLink,
+      boDashboardPage.locationsLink,
     );
-    await zonesPage.closeSfToolBar(page);
+    await boZonesPages.closeSfToolBar(page);
 
-    const pageTitle = await zonesPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(zonesPage.pageTitle);
+    const pageTitle = await boZonesPages.getPageTitle(page);
+    expect(pageTitle).to.contains(boZonesPages.pageTitle);
   });
 
   it('should go to \'States\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToStatesPage', baseContext);
 
-    await zonesPage.goToSubTabStates(page);
+    await boZonesPages.goToSubTabStates(page);
 
     const pageTitle = await statesPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(statesPage.pageTitle);
+    expect(pageTitle).to.contains(statesPage.pageTitle);
   });
 
   it('should reset all filters and get number of states in BO', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'resetFilterFirst', baseContext);
 
     numberOfStates = await statesPage.resetAndGetNumberOfLines(page);
-    await expect(numberOfStates).to.be.above(0);
+    expect(numberOfStates).to.be.above(0);
   });
 
   describe('Create state', async () => {
@@ -78,17 +81,17 @@ describe('BO - International - States : CRUD state', async () => {
       await statesPage.goToAddNewStatePage(page);
 
       const pageTitle = await addStatePage.getPageTitle(page);
-      await expect(pageTitle).to.contains(addStatePage.pageTitleCreate);
+      expect(pageTitle).to.contains(addStatePage.pageTitleCreate);
     });
 
     it('should create new state', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'createNewState', baseContext);
 
       const textResult = await addStatePage.createEditState(page, createStateData);
-      await expect(textResult).to.to.contains(statesPage.successfulCreationMessage);
+      expect(textResult).to.to.contains(statesPage.successfulCreationMessage);
 
-      const numberOfStatesAfterCreation = await statesPage.getNumberOfElementInGrid(page);
-      await expect(numberOfStatesAfterCreation).to.be.equal(numberOfStates + 1);
+      const numberOfStatesAfterCreation = await statesPage.getNumberOfElement(page);
+      expect(numberOfStatesAfterCreation).to.be.equal(numberOfStates + 1);
     });
   });
 
@@ -97,15 +100,15 @@ describe('BO - International - States : CRUD state', async () => {
       await testContext.addContextItem(this, 'testIdentifier', 'filterToUpdate', baseContext);
 
       // Filter
-      await statesPage.filterStates(page, 'input', 'a!name', createStateData.name);
+      await statesPage.filterStates(page, 'input', 'name', createStateData.name);
 
       // Check number of states
       const numberOfStatesAfterFilter = await statesPage.getNumberOfElementInGrid(page);
-      await expect(numberOfStatesAfterFilter).to.be.at.least(1);
+      expect(numberOfStatesAfterFilter).to.be.at.least(1);
 
       // row = 1 (first row)
-      const textColumn = await statesPage.getTextColumn(page, 1, 'a!name');
-      await expect(textColumn).to.contains(createStateData.name);
+      const textColumn = await statesPage.getTextColumn(page, 1, 'name');
+      expect(textColumn).to.contains(createStateData.name);
     });
 
     it('should go to edit state page', async function () {
@@ -114,17 +117,17 @@ describe('BO - International - States : CRUD state', async () => {
       await statesPage.goToEditStatePage(page, 1);
 
       const pageTitle = await addStatePage.getPageTitle(page);
-      await expect(pageTitle).to.contains(addStatePage.pageTitleEdit);
+      expect(pageTitle).to.contains(addStatePage.pageTitleEdit);
     });
 
     it('should edit state', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'ediState', baseContext);
 
       const textResult = await addStatePage.createEditState(page, editStateData);
-      await expect(textResult).to.to.contains(statesPage.successfulUpdateMessage);
+      expect(textResult).to.to.contains(statesPage.successfulUpdateMessage);
 
       const numberOfStatesAfterReset = await statesPage.resetAndGetNumberOfLines(page);
-      await expect(numberOfStatesAfterReset).to.be.equal(numberOfStates + 1);
+      expect(numberOfStatesAfterReset).to.be.equal(numberOfStates + 1);
     });
   });
 
@@ -133,28 +136,28 @@ describe('BO - International - States : CRUD state', async () => {
       await testContext.addContextItem(this, 'testIdentifier', 'filterToDelete', baseContext);
 
       // Filter
-      await statesPage.filterStates(page, 'input', 'a!name', editStateData.name);
+      await statesPage.filterStates(page, 'input', 'name', editStateData.name);
 
       // Check number of state
       const numberOfStatesAfterFilter = await statesPage.getNumberOfElementInGrid(page);
-      await expect(numberOfStatesAfterFilter).to.be.at.least(1);
+      expect(numberOfStatesAfterFilter).to.be.at.least(1);
 
-      const textColumn = await statesPage.getTextColumn(page, 1, 'a!name');
-      await expect(textColumn).to.contains(editStateData.name);
+      const textColumn = await statesPage.getTextColumn(page, 1, 'name');
+      expect(textColumn).to.contains(editStateData.name);
     });
 
     it('should delete state', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'deleteState', baseContext);
 
       const textResult = await statesPage.deleteState(page, 1);
-      await expect(textResult).to.to.contains(statesPage.successfulDeleteMessage);
+      expect(textResult).to.to.contains(statesPage.successfulDeleteMessage);
     });
 
     it('should reset all filters', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'resetAfterDelete', baseContext);
 
       const numberOfStatesAfterReset = await statesPage.resetAndGetNumberOfLines(page);
-      await expect(numberOfStatesAfterReset).to.be.equal(numberOfStates);
+      expect(numberOfStatesAfterReset).to.be.equal(numberOfStates);
     });
   });
 });

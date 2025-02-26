@@ -1,25 +1,24 @@
 // Import utils
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
-
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
 
 // Import pages
 // Import BO pages
-import dashboardPage from '@pages/BO/dashboard';
 import preferencesPage from '@pages/BO/payment/preferences';
-// Import FO pages
-import cartPage from '@pages/FO/cart';
-import checkoutPage from '@pages/FO/checkout';
-import {homePage} from '@pages/FO/home';
-import productPage from '@pages/FO/product';
 
-// Import data
-import Customers from '@data/demo/customers';
+import {
+  boDashboardPage,
+  boLoginPage,
+  type BrowserContext,
+  dataCustomers,
+  foClassicCartPage,
+  foClassicCheckoutPage,
+  foClassicHomePage,
+  foClassicProductPage,
+  type Page,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
 
 const baseContext: string = 'functional_BO_payment_preferences_countryRestrictions';
 
@@ -27,34 +26,40 @@ describe('BO - Payment - Preferences : Configure country restrictions', async ()
   let browserContext: BrowserContext;
   let page: Page;
 
-  const countryID: number = 74;
+  const countryID: number = 73;
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'Payment > Preferences\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToPreferencesPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.paymentParentLink,
-      dashboardPage.preferencesLink,
+      boDashboardPage.paymentParentLink,
+      boDashboardPage.preferencesLink,
     );
     await preferencesPage.closeSfToolBar(page);
 
     const pageTitle = await preferencesPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(preferencesPage.pageTitle);
+    expect(pageTitle).to.contains(preferencesPage.pageTitle);
   });
 
   [
@@ -72,7 +77,7 @@ describe('BO - Payment - Preferences : Configure country restrictions', async ()
         test.args.paymentModule,
         test.args.exist,
       );
-      await expect(result).to.contains(preferencesPage.successfulUpdateMessage);
+      expect(result).to.contains(preferencesPage.successfulUpdateMessage);
     });
 
     it('should view my shop', async function () {
@@ -81,10 +86,10 @@ describe('BO - Payment - Preferences : Configure country restrictions', async ()
       // Click on view my shop
       page = await preferencesPage.viewMyShop(page);
       // Change language in FO
-      await homePage.changeLanguage(page, 'en');
+      await foClassicHomePage.changeLanguage(page, 'en');
 
-      const pageTitle = await homePage.getPageTitle(page);
-      await expect(pageTitle).to.contains(homePage.pageTitle);
+      const pageTitle = await foClassicHomePage.getPageTitle(page);
+      expect(pageTitle).to.contains(foClassicHomePage.pageTitle);
     });
 
     it('should add the first product to the cart and checkout', async function () {
@@ -96,14 +101,14 @@ describe('BO - Payment - Preferences : Configure country restrictions', async ()
       );
 
       // Go to the first product page
-      await homePage.goToProductPage(page, 1);
+      await foClassicHomePage.goToProductPage(page, 1);
       // Add the product to the cart
-      await productPage.addProductToTheCart(page);
+      await foClassicProductPage.addProductToTheCart(page);
       // Proceed to checkout the shopping cart
-      await cartPage.clickOnProceedToCheckout(page);
+      await foClassicCartPage.clickOnProceedToCheckout(page);
 
-      const isCheckoutPage = await checkoutPage.isCheckoutPage(page);
-      await expect(isCheckoutPage).to.be.true;
+      const isCheckoutPage = await foClassicCheckoutPage.isCheckoutPage(page);
+      expect(isCheckoutPage).to.eq(true);
     });
 
     // Personal information step - Login
@@ -112,10 +117,10 @@ describe('BO - Payment - Preferences : Configure country restrictions', async ()
 
       if (index === 0) {
         // Personal information step - Login
-        await checkoutPage.clickOnSignIn(page);
+        await foClassicCheckoutPage.clickOnSignIn(page);
 
-        const isStepLoginComplete = await checkoutPage.customerLogin(page, Customers.johnDoe);
-        await expect(isStepLoginComplete, 'Step Personal information is not complete').to.be.true;
+        const isStepLoginComplete = await foClassicCheckoutPage.customerLogin(page, dataCustomers.johnDoe);
+        expect(isStepLoginComplete, 'Step Personal information is not complete').to.eq(true);
       }
     });
 
@@ -123,30 +128,30 @@ describe('BO - Payment - Preferences : Configure country restrictions', async ()
       await testContext.addContextItem(this, 'testIdentifier', `goToDeliveryStep${index}`, baseContext);
 
       // Address step - Go to delivery step
-      const isStepAddressComplete = await checkoutPage.goToDeliveryStep(page);
-      await expect(isStepAddressComplete, 'Step Address is not complete').to.be.true;
+      const isStepAddressComplete = await foClassicCheckoutPage.goToDeliveryStep(page);
+      expect(isStepAddressComplete, 'Step Address is not complete').to.eq(true);
     });
 
     it('should continue to payment step and check the existence of payment method', async function () {
       await testContext.addContextItem(this, 'testIdentifier', `goToPaymentStep${index}`, baseContext);
 
       // Delivery step - Go to payment step
-      const isStepDeliveryComplete = await checkoutPage.goToPaymentStep(page);
-      await expect(isStepDeliveryComplete, 'Step Address is not complete').to.be.true;
+      const isStepDeliveryComplete = await foClassicCheckoutPage.goToPaymentStep(page);
+      expect(isStepDeliveryComplete, 'Step Address is not complete').to.eq(true);
 
       // Payment step - Check payment method
-      const isVisible = await checkoutPage.isPaymentMethodExist(page, test.args.paymentModule);
-      await expect(isVisible).to.be.equal(test.args.exist);
+      const isVisible = await foClassicCheckoutPage.isPaymentMethodExist(page, test.args.paymentModule);
+      expect(isVisible).to.be.equal(test.args.exist);
     });
 
     it('should go back to BO', async function () {
       await testContext.addContextItem(this, 'testIdentifier', `goBackToBo${index}`, baseContext);
 
       // Close current tab
-      page = await homePage.closePage(browserContext, page, 0);
+      page = await foClassicHomePage.closePage(browserContext, page, 0);
 
       const pageTitle = await preferencesPage.getPageTitle(page);
-      await expect(pageTitle).to.contains(preferencesPage.pageTitle);
+      expect(pageTitle).to.contains(preferencesPage.pageTitle);
     });
   });
 });

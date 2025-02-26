@@ -1,7 +1,12 @@
 import BOBasePage from '@pages/BO/BObasePage';
 
-import type {Page} from 'playwright';
-import CarrierData from '@data/faker/carrier';
+import {
+  type Page,
+} from '@prestashop-core/ui-testing';
+import {
+  // Import data
+  FakerCarrier,
+} from '@prestashop-core/ui-testing';
 
 class Preferences extends BOBasePage {
   public readonly pageTitle: string;
@@ -53,7 +58,7 @@ class Preferences extends BOBasePage {
     await this.setValue(page, this.handlingChargesInput, value);
 
     // Save handling form and return successful message
-    await page.click(this.saveHandlingButton);
+    await page.locator(this.saveHandlingButton).click();
     return this.getAlertSuccessBlockParagraphContent(page);
   }
 
@@ -62,18 +67,18 @@ class Preferences extends BOBasePage {
   /**
    * Set default carrier in carrier options form
    * @param page {Page} Browser tab
-   * @param carrier {CarrierData} List of carriers
+   * @param carrier {FakerCarrier} List of carriers
    * @return {Promise<string>}
    */
-  async setDefaultCarrier(page: Page, carrier: CarrierData): Promise<string> {
+  async setDefaultCarrier(page: Page, carrier: FakerCarrier): Promise<string> {
     await this.selectByVisibleText(
       page,
       this.defaultCarrierSelect,
-      `${carrier.id} - ${carrier.name} (${carrier.delay})`,
+      `${carrier.id} - ${carrier.name} (${carrier.transitName})`,
     );
 
     // Save configuration and return successful message
-    await page.click(this.saveCarrierOptionsButton);
+    await page.locator(this.saveCarrierOptionsButton).click();
     return this.getAlertSuccessBlockParagraphContent(page);
   }
 
@@ -89,7 +94,7 @@ class Preferences extends BOBasePage {
     await this.selectByVisibleText(page, this.orderBySelect, orderBy);
 
     // Save configuration and return successful message
-    await page.click(this.saveCarrierOptionsButton);
+    await page.locator(this.saveCarrierOptionsButton).click();
     return this.getAlertSuccessBlockParagraphContent(page);
   }
 }

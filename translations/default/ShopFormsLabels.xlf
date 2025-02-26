@@ -61,6 +61,16 @@
   </file>
   <file original="classes/form/CustomerFormatter.php" source-language="en-US" target-language="en" datatype="plaintext">
     <body>
+      <trans-unit id="ce8ae9da5b7cd6c3df2929543a9af92d">
+        <source>Email</source>
+        <target>Email</target>
+        <note>Line: 167</note>
+      </trans-unit>
+      <trans-unit id="dc647eb65e6711e155375218212b3964">
+        <source>Password</source>
+        <target>Password</target>
+        <note>Line: 180</note>
+      </trans-unit>
       <trans-unit id="20db0bfeecd8fe60533206a2b5e9891a">
         <source>First name</source>
         <target>First name</target>
@@ -90,22 +100,17 @@ Comment: Please localize this string with the applicable registration number typ
       <trans-unit id="ccd41dac2cc2284362975a05bd9ce363">
         <source>Birthdate</source>
         <target>Birthdate</target>
-        <note>Line: 207</note>
-      </trans-unit>
-      <trans-unit id="ce8ae9da5b7cd6c3df2929543a9af92d">
-        <source>Email</source>
-        <target>Email</target>
-        <note>Line: 167</note>
-      </trans-unit>
-      <trans-unit id="dc647eb65e6711e155375218212b3964">
-        <source>Password</source>
-        <target>Password</target>
-        <note>Line: 180</note>
+        <note>Line: 209</note>
       </trans-unit>
     </body>
   </file>
   <file original="themes/classic/modules/contactform/views/templates/widget/contactform.tpl" source-language="en-US" target-language="en" datatype="plaintext">
     <body>
+      <trans-unit id="b357b524e740bc85b9790a0712d84a30">
+        <source>Email address</source>
+        <target>Email address</target>
+        <note>Line: 58</note>
+      </trans-unit>
       <trans-unit id="c7892ebbb139886662c6f2fc8c450710">
         <source>Subject</source>
         <target>Subject</target>
@@ -126,29 +131,19 @@ Comment: Please localize this string with the applicable registration number typ
         <target>Message</target>
         <note>Line: 101</note>
       </trans-unit>
-      <trans-unit id="b357b524e740bc85b9790a0712d84a30">
-        <source>Email address</source>
-        <target>Email address</target>
-        <note>Line: 58</note>
-      </trans-unit>
     </body>
   </file>
-  <file original="themes/classic/modules/ps_emailsubscription/views/templates/hook/ps_emailsubscription-column.tpl" source-language="en-US" target-language="en" datatype="plaintext">
+  <file original="themes/classic/modules/ps_emailsubscription/views/templates/hook/ps_emailsubscription.tpl" source-language="en-US" target-language="en" datatype="plaintext">
     <body>
       <trans-unit id="198584454b0ce1101ff5b50323325aa8">
         <source>Your email address</source>
         <target>Your email address</target>
-        <note>Line: 42</note>
+        <note>Line: 50</note>
       </trans-unit>
     </body>
   </file>
   <file original="themes/classic/templates/_partials/form-fields.tpl" source-language="en-US" target-language="en" datatype="plaintext">
     <body>
-      <trans-unit id="4293bbcd95a38b4da545b4a245610dbb">
-        <source>Please choose</source>
-        <target>Please choose</target>
-        <note>Line: 61</note>
-      </trans-unit>
       <trans-unit id="93332134fd11cffbe680dd8afaa521fc">
         <source>-- day --</source>
         <target>-- day --</target>
@@ -169,6 +164,11 @@ Comment: Please localize this string with the applicable registration number typ
         <target>Optional</target>
         <note>Line: 198</note>
       </trans-unit>
+      <trans-unit id="4293bbcd95a38b4da545b4a245610dbb">
+        <source>Please choose</source>
+        <target>Please choose</target>
+        <note>Line: 61</note>
+      </trans-unit>
     </body>
   </file>
   <file original="themes/classic/templates/customer/_partials/account-transformation-form.tpl" source-language="en-US" target-language="en" datatype="plaintext">
@@ -182,15 +182,15 @@ Comment: Please localize this string with the applicable registration number typ
   </file>
   <file original="themes/classic/templates/customer/_partials/order-messages.tpl" source-language="en-US" target-language="en" datatype="plaintext">
     <body>
-      <trans-unit id="deb10517653c255364175796ace3553f">
-        <source>Product</source>
-        <target>Product</target>
-        <note>Line: 56</note>
-      </trans-unit>
       <trans-unit id="1625e29c02062efe5dbc42c3efeeebc4">
         <source>-- please choose --</source>
         <target>-- please choose --</target>
         <note>Line: 59</note>
+      </trans-unit>
+      <trans-unit id="deb10517653c255364175796ace3553f">
+        <source>Product</source>
+        <target>Product</target>
+        <note>Line: 56</note>
       </trans-unit>
     </body>
   </file>

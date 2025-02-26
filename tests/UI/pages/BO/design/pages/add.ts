@@ -1,8 +1,10 @@
 import BOBasePage from '@pages/BO/BObasePage';
 
-import type CMSPageData from '@data/faker/CMSpage';
+import {
+  type Page,
 
-import type {Page} from 'playwright';
+  type FakerCMSPage,
+} from '@prestashop-core/ui-testing';
 
 /**
  * Add page page, contains functions that can be used on the page
@@ -12,13 +14,13 @@ import type {Page} from 'playwright';
 class AddPage extends BOBasePage {
   public readonly pageTitleCreate: string;
 
+  public readonly editPageTitle: (pageTitle: string) => string;
+
   private readonly titleInput: string;
 
   private readonly metaTitleInput: string;
 
   private readonly metaDescriptionInput: string;
-
-  private readonly metaKeywordsInput: string;
 
   private readonly pageContentIframe: string;
 
@@ -39,13 +41,13 @@ class AddPage extends BOBasePage {
   constructor() {
     super();
 
-    this.pageTitleCreate = 'Pages';
+    this.pageTitleCreate = `New page • ${global.INSTALL.SHOP_NAME}`;
+    this.editPageTitle = (pageTitle: string) => `Editing page ${pageTitle} • ${global.INSTALL.SHOP_NAME}`;
 
     // Selectors
     this.titleInput = '#cms_page_title_1';
     this.metaTitleInput = '#cms_page_meta_title_1';
     this.metaDescriptionInput = '#cms_page_meta_description_1';
-    this.metaKeywordsInput = '#cms_page_meta_keyword_1-tokenfield';
     this.pageContentIframe = '#cms_page_content_1_ifr';
     this.indexationToggleInput = (toggle: number) => `#cms_page_is_indexed_for_search_${toggle}`;
     this.displayedToggleInput = (toggle: number) => `#cms_page_is_displayed_${toggle}`;
@@ -61,15 +63,14 @@ class AddPage extends BOBasePage {
   /**
    * Fill form for add/edit page category
    * @param page {Page} Browser tab
-   * @param pageData {CMSPageData} Data to set on new/edit page form
+   * @param pageData {FakerCMSPage} Data to set on new/edit page form
    * @return {Promise<string>}
    */
-  async createEditPage(page: Page, pageData: CMSPageData): Promise<string> {
+  async createEditPage(page: Page, pageData: FakerCMSPage): Promise<string> {
     // Fill form
     await this.setValue(page, this.titleInput, pageData.title);
     await this.setValue(page, this.metaTitleInput, pageData.metaTitle);
     await this.setValue(page, this.metaDescriptionInput, pageData.metaDescription);
-    await this.setValue(page, this.metaKeywordsInput, pageData.metaKeywords);
     await this.setValueOnTinymceInput(page, this.pageContentIframe, pageData.content);
     await this.setChecked(page, this.indexationToggleInput(pageData.indexation ? 1 : 0));
     await this.setChecked(page, this.displayedToggleInput(pageData.displayed ? 1 : 0));
@@ -99,4 +100,5 @@ class AddPage extends BOBasePage {
     await this.clickAndWaitForURL(page, this.cancelButton);
   }
 }
+
 export default new AddPage();

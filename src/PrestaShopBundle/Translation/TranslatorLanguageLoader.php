@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -81,7 +80,7 @@ class TranslatorLanguageLoader
      * @param bool $withDB [default=true] Whether to load translations from the database or not
      * @param Theme|null $theme [default=false] Currently active theme (Front office only)
      */
-    public function loadLanguage(TranslatorInterface $translator, $locale, $withDB = true, Theme $theme = null)
+    public function loadLanguage(TranslatorInterface $translator, $locale, $withDB = true, ?Theme $theme = null)
     {
         if (!method_exists($translator, 'isLanguageLoaded')) {
             return;
@@ -109,10 +108,11 @@ class TranslatorLanguageLoader
                 ->files()
                 ->name('*.' . $locale . '.xlf')
                 ->notName($this->isAdminContext ? '^Shop*' : '^Admin*')
+                ->followLinks()
                 ->in($directory);
 
             foreach ($finder as $file) {
-                list($domain, $locale, $format) = explode('.', $file->getBasename(), 3);
+                [$domain, $locale, $format] = explode('.', $file->getBasename(), 3);
                 $translator->addResource($format, $file, $locale, $domain);
                 if ($withDB) {
                     if ($type !== 'theme') {
@@ -157,10 +157,11 @@ class TranslatorLanguageLoader
         $modulesCatalogueFinder = Finder::create()
             ->files()
             ->name($filenamePattern)
+            ->followLinks()
             ->in($translationDir);
 
         foreach ($modulesCatalogueFinder as $file) {
-            list($domain, $locale, $format) = explode('.', $file->getBasename(), 3);
+            [$domain, $locale, $format] = explode('.', $file->getBasename(), 3);
             $translator->addResource($format, $file, $locale, $domain);
             if ($withDB) {
                 $translator->addResource('db', $domain . '.' . $locale . '.db', $locale, $domain);
@@ -173,7 +174,7 @@ class TranslatorLanguageLoader
      *
      * @return array
      */
-    protected function getTranslationResourcesDirectories(Theme $theme = null): array
+    protected function getTranslationResourcesDirectories(?Theme $theme = null): array
     {
         $locations = ['core' => self::TRANSLATION_DIR];
 

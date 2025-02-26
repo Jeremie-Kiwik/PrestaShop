@@ -89,7 +89,7 @@ class CountryCore extends ObjectModel
             'contains_states' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool', 'required' => true],
             'need_identification_number' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool', 'required' => true],
             'need_zip_code' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool'],
-            'zip_code_format' => ['type' => self::TYPE_STRING, 'validate' => 'isZipCodeFormat'],
+            'zip_code_format' => ['type' => self::TYPE_STRING, 'validate' => 'isZipCodeFormat', 'size' => 12],
             'display_tax_label' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool', 'required' => true],
 
             /* Lang fields */
@@ -184,7 +184,7 @@ class CountryCore extends ObjectModel
     public static function getByIso($isoCode, $active = false)
     {
         if (!Validate::isLanguageIsoCode($isoCode)) {
-            die(Tools::displayError('Given iso code (' . $isoCode . ') is not valid.'));
+            throw new PrestaShopException('Given iso code (' . $isoCode . ') is not valid.');
         }
         $result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow(
             '
@@ -211,7 +211,7 @@ class CountryCore extends ObjectModel
     public static function getIdZone($idCountry)
     {
         if (!Validate::isUnsignedId($idCountry)) {
-            die(Tools::displayError('Country ID is invalid.'));
+            throw new PrestaShopException('Country ID is invalid.');
         }
 
         if (isset(self::$_idZones[$idCountry])) {
@@ -250,7 +250,7 @@ class CountryCore extends ObjectModel
 							FROM `' . _DB_PREFIX_ . 'country_lang`
 							WHERE `id_lang` = ' . (int) $idLang . '
 							AND `id_country` = ' . (int) $idCountry
-                        );
+            );
             Cache::store($key, $result);
 
             return $result;
@@ -363,10 +363,10 @@ class CountryCore extends ObjectModel
     public static function getCountriesByZoneId($idZone, $idLang)
     {
         if (empty($idZone)) {
-            die(Tools::displayError('Zone ID is invalid.'));
+            throw new PrestaShopException('Zone ID is invalid.');
         }
         if (empty($idLang)) {
-            die(Tools::displayError('Lang ID is invalid.'));
+            throw new PrestaShopException('Lang ID is invalid.');
         }
 
         $sql = ' SELECT DISTINCT c.*, cl.*

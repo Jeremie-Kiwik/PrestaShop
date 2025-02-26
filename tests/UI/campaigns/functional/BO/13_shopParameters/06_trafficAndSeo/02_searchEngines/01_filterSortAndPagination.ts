@@ -1,21 +1,20 @@
 // Import utils
-import basicHelper from '@utils/basicHelper';
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
 
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
-
 // Import pages
-import dashboardPage from '@pages/BO/dashboard';
 import seoAndUrlsPage from '@pages/BO/shopParameters/trafficAndSeo/seoAndUrls';
 import searchEnginesPage from '@pages/BO/shopParameters/trafficAndSeo/searchEngines';
 
-// Import data
-import SearchEngines from '@data/demo/searchEngines';
-
 import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  type BrowserContext,
+  dataSearchEngines,
+  type Page,
+  utilsCore,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_shopParameters_trafficAndSeo_searchEngines_filterSortAndPagination';
 
@@ -31,29 +30,35 @@ describe('BO - Shop Parameters - Traffic & SEO : Filter, sort and pagination sea
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'Shop Parameters > Traffic & SEO\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToSeoAndUrlsPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.shopParametersParentLink,
-      dashboardPage.trafficAndSeoLink,
+      boDashboardPage.shopParametersParentLink,
+      boDashboardPage.trafficAndSeoLink,
     );
 
     const pageTitle = await seoAndUrlsPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(seoAndUrlsPage.pageTitle);
+    expect(pageTitle).to.contains(seoAndUrlsPage.pageTitle);
   });
 
   it('should go to \'Search Engines\' pge', async function () {
@@ -62,21 +67,21 @@ describe('BO - Shop Parameters - Traffic & SEO : Filter, sort and pagination sea
     await seoAndUrlsPage.goToSearchEnginesPage(page);
 
     const pageTitle = await searchEnginesPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(searchEnginesPage.pageTitle);
+    expect(pageTitle).to.contains(searchEnginesPage.pageTitle);
   });
 
   it('should reset all filters and get number of search engines in BO', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'resetFilterFirst', baseContext);
 
     numberOfSearchEngines = await searchEnginesPage.resetAndGetNumberOfLines(page);
-    await expect(numberOfSearchEngines).to.be.above(0);
+    expect(numberOfSearchEngines).to.be.above(0);
   });
 
   describe('Filter search engines', async () => {
     const tests = [
-      {args: {testIdentifier: 'filterId', filterBy: 'id_search_engine', filterValue: SearchEngines.lycos.id.toString()}},
-      {args: {testIdentifier: 'filterServer', filterBy: 'server', filterValue: SearchEngines.google.server}},
-      {args: {testIdentifier: 'filterKey', filterBy: 'query_key', filterValue: SearchEngines.voila.queryKey}},
+      {args: {testIdentifier: 'filterId', filterBy: 'id_search_engine', filterValue: dataSearchEngines.lycos.id.toString()}},
+      {args: {testIdentifier: 'filterServer', filterBy: 'server', filterValue: dataSearchEngines.google.server}},
+      {args: {testIdentifier: 'filterKey', filterBy: 'query_key', filterValue: dataSearchEngines.voila.queryKey}},
     ];
 
     tests.forEach((test) => {
@@ -90,7 +95,7 @@ describe('BO - Shop Parameters - Traffic & SEO : Filter, sort and pagination sea
         );
 
         const numberOfSearchEnginesAfterFilter = await searchEnginesPage.getNumberOfElementInGrid(page);
-        await expect(numberOfSearchEnginesAfterFilter).to.be.at.most(numberOfSearchEngines);
+        expect(numberOfSearchEnginesAfterFilter).to.be.at.most(numberOfSearchEngines);
 
         for (let i = 1; i <= numberOfSearchEnginesAfterFilter; i++) {
           const textColumn = await searchEnginesPage.getTextColumn(
@@ -98,7 +103,7 @@ describe('BO - Shop Parameters - Traffic & SEO : Filter, sort and pagination sea
             i,
             test.args.filterBy,
           );
-          await expect(textColumn).to.contains(test.args.filterValue);
+          expect(textColumn).to.contains(test.args.filterValue);
         }
       });
 
@@ -106,7 +111,7 @@ describe('BO - Shop Parameters - Traffic & SEO : Filter, sort and pagination sea
         await testContext.addContextItem(this, 'testIdentifier', `${test.args.testIdentifier}Reset`, baseContext);
 
         const numberOfSearchEnginesAfterReset = await searchEnginesPage.resetAndGetNumberOfLines(page);
-        await expect(numberOfSearchEnginesAfterReset).to.equal(numberOfSearchEngines);
+        expect(numberOfSearchEnginesAfterReset).to.equal(numberOfSearchEngines);
       });
     });
   });
@@ -159,20 +164,20 @@ describe('BO - Shop Parameters - Traffic & SEO : Filter, sort and pagination sea
           const nonSortedTableFloat: number[] = nonSortedTable.map((text: string): number => parseFloat(text));
           const sortedTableFloat: number[] = sortedTable.map((text: string): number => parseFloat(text));
 
-          const expectedResult: number[] = await basicHelper.sortArrayNumber(nonSortedTableFloat);
+          const expectedResult: number[] = await utilsCore.sortArrayNumber(nonSortedTableFloat);
 
           if (test.args.sortDirection === 'asc') {
-            await expect(sortedTableFloat).to.deep.equal(expectedResult);
+            expect(sortedTableFloat).to.deep.equal(expectedResult);
           } else {
-            await expect(sortedTableFloat).to.deep.equal(expectedResult.reverse());
+            expect(sortedTableFloat).to.deep.equal(expectedResult.reverse());
           }
         } else {
-          const expectedResult = await basicHelper.sortArray(nonSortedTable);
+          const expectedResult = await utilsCore.sortArray(nonSortedTable);
 
           if (test.args.sortDirection === 'asc') {
-            await expect(sortedTable).to.deep.equal(expectedResult);
+            expect(sortedTable).to.deep.equal(expectedResult);
           } else {
-            await expect(sortedTable).to.deep.equal(expectedResult.reverse());
+            expect(sortedTable).to.deep.equal(expectedResult.reverse());
           }
         }
       });

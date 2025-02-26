@@ -1,5 +1,7 @@
 import BOBasePage from '@pages/BO/BObasePage';
-import type {Page} from 'playwright';
+import {
+  type Page,
+} from '@prestashop-core/ui-testing';
 
 /**
  * Search page, contains functions that can be used on the page
@@ -127,7 +129,7 @@ class SearchResults extends BOBasePage {
    * @returns {Promise<number>}
    */
   async getSearchPanelsLinksNumber(page: Page): Promise<number> {
-    return (await page.$$(this.searchPanelsLinks)).length;
+    return page.locator(this.searchPanelsLinks).count();
   }
 
   /**

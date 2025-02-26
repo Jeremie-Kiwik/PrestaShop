@@ -1,23 +1,23 @@
-// Import utils
-import basicHelper from '@utils/basicHelper';
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
+import {expect} from 'chai';
 
 // Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
+import setMultiStoreStatus from '@commonTests/BO/advancedParameters/multistore';
 
 // Import pages
-import dashboardPage from '@pages/BO/dashboard';
-import generalPage from '@pages/BO/shopParameters/general';
-import multiStorePage from '@pages/BO/advancedParameters/multistore';
-import addShopUrlPage from '@pages/BO/advancedParameters/multistore/url/addURL';
 import shopUrlPage from '@pages/BO/advancedParameters/multistore/url';
 
-// Import data
-import ShopData from '@data/faker/shop';
-
-import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  boMultistorePage,
+  boMultistoreShopUrlCreatePage,
+  type BrowserContext,
+  FakerShop,
+  type Page,
+  utilsCore,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_advancedParameters_multistore_filterSortAndPaginationShopUrls';
 
@@ -34,73 +34,58 @@ describe('BO - Advanced Parameters - Multistore : Filter, sort and pagination sh
   let browserContext: BrowserContext;
   let page: Page;
 
+  // Pre-condition: Enable multistore
+  setMultiStoreStatus(true, `${baseContext}_preTest`);
+
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
-  });
-
-  it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
-  });
-
-  // 1 : Enable multi store
-  describe('Enable \'Multistore\'', async () => {
-    it('should go to \'Shop Parameters > General\' page', async function () {
-      await testContext.addContextItem(this, 'testIdentifier', 'goToGeneralPage', baseContext);
-
-      await dashboardPage.goToSubMenu(
-        page,
-        dashboardPage.shopParametersParentLink,
-        dashboardPage.shopParametersGeneralLink,
-      );
-      await generalPage.closeSfToolBar(page);
-
-      const pageTitle = await generalPage.getPageTitle(page);
-      await expect(pageTitle).to.contains(generalPage.pageTitle);
-    });
-
-    it('should enable \'Multistore\'', async function () {
-      await testContext.addContextItem(this, 'testIdentifier', 'enableMultiStore', baseContext);
-
-      const result = await generalPage.setMultiStoreStatus(page, true);
-      await expect(result).to.contains(generalPage.successfulUpdateMessage);
-    });
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   // 2 : Go to multistore page
   describe('Go to \'Multistore\' page', async () => {
+    it('should login in BO', async function () {
+      await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+      await boLoginPage.goTo(page, global.BO.URL);
+      await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+      const pageTitle = await boDashboardPage.getPageTitle(page);
+      expect(pageTitle).to.contains(boDashboardPage.pageTitle);
+    });
+
     it('should go to \'Advanced Parameters > Multistore\' page', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'goToMultiStorePage', baseContext);
 
-      await dashboardPage.goToSubMenu(
+      await boDashboardPage.goToSubMenu(
         page,
-        dashboardPage.advancedParametersLink,
-        dashboardPage.multistoreLink,
+        boDashboardPage.advancedParametersLink,
+        boDashboardPage.multistoreLink,
       );
 
-      const pageTitle = await multiStorePage.getPageTitle(page);
-      await expect(pageTitle).to.contains(multiStorePage.pageTitle);
+      const pageTitle = await boMultistorePage.getPageTitle(page);
+      expect(pageTitle).to.contains(boMultistorePage.pageTitle);
     });
 
     it('should go to \'Shop Urls\' page', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'goToShopUrlsPage', baseContext);
 
-      await multiStorePage.goToShopURLPage(page, 1);
+      await boMultistorePage.goToShopURLPage(page, 1);
 
-      const pageTitle = await multiStorePage.getPageTitle(page);
-      await expect(pageTitle).to.contains(multiStorePage.pageTitle);
+      const pageTitle = await boMultistorePage.getPageTitle(page);
+      expect(pageTitle).to.contains(boMultistorePage.pageTitle);
     });
   });
 
   // 3 : Create 20 shop urls
   describe('Create 20 shop Urls', async () => {
     Array(20).fill(0, 0, 20).forEach((test: number, index: number) => {
-      const shopUrlData: ShopData = new ShopData({
+      const shopUrlData: FakerShop = new FakerShop({
         name: `ToDelete${index + 1}Shop`,
         shopGroup: '',
         categoryRoot: '',
@@ -110,15 +95,15 @@ describe('BO - Advanced Parameters - Multistore : Filter, sort and pagination sh
 
         await shopUrlPage.goToAddNewUrl(page);
 
-        const pageTitle = await addShopUrlPage.getPageTitle(page);
-        await expect(pageTitle).to.contains(addShopUrlPage.pageTitleCreate);
+        const pageTitle = await boMultistoreShopUrlCreatePage.getPageTitle(page);
+        expect(pageTitle).to.contains(boMultistoreShopUrlCreatePage.pageTitleCreate);
       });
 
       it(`should create shop URl n°${index + 1}`, async function () {
         await testContext.addContextItem(this, 'testIdentifier', `addURL${index}`, baseContext);
 
-        const textResult = await addShopUrlPage.setVirtualUrl(page, shopUrlData);
-        await expect(textResult).to.contains(addShopUrlPage.successfulCreationMessage);
+        const textResult = await boMultistoreShopUrlCreatePage.setVirtualUrl(page, shopUrlData.name);
+        expect(textResult).to.contains(boMultistoreShopUrlCreatePage.successfulCreationMessage);
       });
     });
   });
@@ -127,12 +112,12 @@ describe('BO - Advanced Parameters - Multistore : Filter, sort and pagination sh
   describe('Filter shop table', async () => {
     [
       {args: {filterBy: 'id_shop_url', filterValue: '10', filterType: 'input'}},
-      {args: {filterBy: 's!name', filterValue: 'PrestaShop', filterType: 'input'}},
+      {args: {filterBy: 's!name', filterValue: global.INSTALL.SHOP_NAME, filterType: 'input'}},
       {args: {filterBy: 'url', filterValue: 'ToDelete10', filterType: 'input'}},
       {args: {filterBy: 'main', filterValue: 'Yes', filterType: 'select'}, expected: 'Enabled'},
       {args: {filterBy: 'active', filterValue: 'Yes', filterType: 'select'}, expected: 'Enabled'},
     ].forEach((
-      test: {args:{filterBy: string, filterValue: string, filterType: string}, expected?: string},
+      test: { args: { filterBy: string, filterValue: string, filterType: string }, expected?: string },
       index: number,
     ) => {
       it(`should filter list by ${test.args.filterBy}`, async function () {
@@ -146,9 +131,9 @@ describe('BO - Advanced Parameters - Multistore : Filter, sort and pagination sh
           const textColumn = await shopUrlPage.getTextColumn(page, i, test.args.filterBy);
 
           if (test.expected !== undefined) {
-            await expect(textColumn).to.contains(test.expected);
+            expect(textColumn).to.contains(test.expected);
           } else {
-            await expect(textColumn).to.contains(test.args.filterValue);
+            expect(textColumn).to.contains(test.args.filterValue);
           }
         }
       });
@@ -157,7 +142,7 @@ describe('BO - Advanced Parameters - Multistore : Filter, sort and pagination sh
         await testContext.addContextItem(this, 'testIdentifier', `resetFilter_${index}`, baseContext);
 
         const numberOfElement = await shopUrlPage.resetAndGetNumberOfLines(page);
-        await expect(numberOfElement).to.be.above(20);
+        expect(numberOfElement).to.be.above(20);
       });
     });
   });
@@ -232,7 +217,7 @@ describe('BO - Advanced Parameters - Multistore : Filter, sort and pagination sh
             testIdentifier: 'sortByIdAsc', sortBy: 'id_shop_url', sortDirection: 'up', isFloat: true,
           },
       },
-    ].forEach((test: {args: {testIdentifier: string, sortBy: string, sortDirection: string, isFloat?: boolean}}) => {
+    ].forEach((test: { args: { testIdentifier: string, sortBy: string, sortDirection: string, isFloat?: boolean } }) => {
       it(`should sort by '${test.args.sortBy}' '${test.args.sortDirection}' and check result`, async function () {
         await testContext.addContextItem(this, 'testIdentifier', test.args.testIdentifier, baseContext);
 
@@ -245,20 +230,20 @@ describe('BO - Advanced Parameters - Multistore : Filter, sort and pagination sh
           const nonSortedTableFloat = nonSortedTable.map((text: string): number => parseFloat(text));
           const sortedTableFloat = sortedTable.map((text: string): number => parseFloat(text));
 
-          const expectedResult = await basicHelper.sortArrayNumber(nonSortedTableFloat);
+          const expectedResult = await utilsCore.sortArrayNumber(nonSortedTableFloat);
 
           if (test.args.sortDirection === 'up') {
-            await expect(sortedTableFloat).to.deep.equal(expectedResult);
+            expect(sortedTableFloat).to.deep.equal(expectedResult);
           } else {
-            await expect(sortedTableFloat).to.deep.equal(expectedResult.reverse());
+            expect(sortedTableFloat).to.deep.equal(expectedResult.reverse());
           }
         } else {
-          const expectedResult = await basicHelper.sortArray(nonSortedTable);
+          const expectedResult = await utilsCore.sortArray(nonSortedTable);
 
           if (test.args.sortDirection === 'up') {
-            await expect(sortedTable).to.deep.equal(expectedResult);
+            expect(sortedTable).to.deep.equal(expectedResult);
           } else {
-            await expect(sortedTable).to.deep.equal(expectedResult.reverse());
+            expect(sortedTable).to.deep.equal(expectedResult.reverse());
           }
         }
       });
@@ -274,32 +259,11 @@ describe('BO - Advanced Parameters - Multistore : Filter, sort and pagination sh
         await shopUrlPage.filterTable(page, 'input', 'url', `ToDelete${index + 1}Shop`);
 
         const textResult = await shopUrlPage.deleteShopURL(page, 1);
-        await expect(textResult).to.contains(shopUrlPage.successfulDeleteMessage);
+        expect(textResult).to.contains(shopUrlPage.successfulDeleteMessage);
       });
     });
   });
 
-  // 8 : Disable multi store
-  describe('Disable \'Multistore\'', async () => {
-    it('should go to \'Shop Parameters > General\' page', async function () {
-      await testContext.addContextItem(this, 'testIdentifier', 'goToGeneralPage2', baseContext);
-
-      await dashboardPage.goToSubMenu(
-        page,
-        dashboardPage.shopParametersParentLink,
-        dashboardPage.shopParametersGeneralLink,
-      );
-      await generalPage.closeSfToolBar(page);
-
-      const pageTitle = await generalPage.getPageTitle(page);
-      await expect(pageTitle).to.contains(generalPage.pageTitle);
-    });
-
-    it('should disable \'Multistore\'', async function () {
-      await testContext.addContextItem(this, 'testIdentifier', 'disableMultiStore', baseContext);
-
-      const result = await generalPage.setMultiStoreStatus(page, false);
-      await expect(result).to.contains(generalPage.successfulUpdateMessage);
-    });
-  });
+  // Post-condition : Disable multi store
+  setMultiStoreStatus(false, `${baseContext}_postTest`);
 });

@@ -1,20 +1,17 @@
-// Import utils
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
+import {expect} from 'chai';
 
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
-
-// Import pages
-import dashboardPage from '@pages/BO/dashboard';
-import zonesPage from '@pages/BO/international/locations';
 import addZonePage from '@pages/BO/international/locations/add';
 
-// Import data
-import ZoneData from '@data/faker/zone';
-
-import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  boZonesPages,
+  type BrowserContext,
+  FakerZone,
+  type Page,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_international_locations_zones_CRUDZone';
 
@@ -23,62 +20,68 @@ describe('BO - International - Zones : CRUD zone', async () => {
   let page: Page;
   let numberOfZones: number = 0;
 
-  const createZoneData: ZoneData = new ZoneData();
-  const editZoneData: ZoneData = new ZoneData();
+  const createZoneData: FakerZone = new FakerZone();
+  const editZoneData: FakerZone = new FakerZone();
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'International > Locations\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToLocationsPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.internationalParentLink,
-      dashboardPage.locationsLink,
+      boDashboardPage.internationalParentLink,
+      boDashboardPage.locationsLink,
     );
-    await zonesPage.closeSfToolBar(page);
+    await boZonesPages.closeSfToolBar(page);
 
-    const pageTitle = await zonesPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(zonesPage.pageTitle);
+    const pageTitle = await boZonesPages.getPageTitle(page);
+    expect(pageTitle).to.contains(boZonesPages.pageTitle);
   });
 
   it('should reset all filters and get number of zones in BO', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'resetFilterFirst', baseContext);
 
-    numberOfZones = await zonesPage.resetAndGetNumberOfLines(page);
-    await expect(numberOfZones).to.be.above(0);
+    numberOfZones = await boZonesPages.resetAndGetNumberOfLines(page);
+    expect(numberOfZones).to.be.above(0);
   });
 
   describe('Create zone', async () => {
     it('should go to add new zone page', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'goToAddNewZonePage', baseContext);
 
-      await zonesPage.goToAddNewZonePage(page);
+      await boZonesPages.goToAddNewZonePage(page);
 
       const pageTitle = await addZonePage.getPageTitle(page);
-      await expect(pageTitle).to.contains(addZonePage.pageTitleCreate);
+      expect(pageTitle).to.contains(addZonePage.pageTitleCreate);
     });
 
     it('should create new zone', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'createNewZone', baseContext);
 
       const textResult = await addZonePage.createEditZone(page, createZoneData);
-      await expect(textResult).to.to.contains(zonesPage.successfulCreationMessage);
+      expect(textResult).to.to.contains(boZonesPages.successfulCreationMessage);
 
-      const numberOfZonesAfterCreation = await zonesPage.getNumberOfElementInGrid(page);
-      await expect(numberOfZonesAfterCreation).to.be.equal(numberOfZones + 1);
+      const numberOfZonesAfterCreation = await boZonesPages.getNumberOfElementInGrid(page);
+      expect(numberOfZonesAfterCreation).to.be.equal(numberOfZones + 1);
     });
   });
 
@@ -87,34 +90,34 @@ describe('BO - International - Zones : CRUD zone', async () => {
       await testContext.addContextItem(this, 'testIdentifier', 'filterToUpdate', baseContext);
 
       // Filter
-      await zonesPage.filterZones(page, 'input', 'name', createZoneData.name);
+      await boZonesPages.filterZones(page, 'input', 'name', createZoneData.name);
 
       // Check number of zones
-      const numberOfZonesAfterFilter = await zonesPage.getNumberOfElementInGrid(page);
-      await expect(numberOfZonesAfterFilter).to.be.at.least(1);
+      const numberOfZonesAfterFilter = await boZonesPages.getNumberOfElementInGrid(page);
+      expect(numberOfZonesAfterFilter).to.be.at.least(1);
 
       // row = 1 (first row)
-      const textColumn = await zonesPage.getTextColumn(page, 1, 'name');
-      await expect(textColumn).to.contains(createZoneData.name);
+      const textColumn = await boZonesPages.getTextColumn(page, 1, 'name');
+      expect(textColumn).to.contains(createZoneData.name);
     });
 
     it('should go to edit zone page', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'goToEditZonePage', baseContext);
 
-      await zonesPage.goToEditZonePage(page, 1);
+      await boZonesPages.goToEditZonePage(page, 1);
 
       const pageTitle = await addZonePage.getPageTitle(page);
-      await expect(pageTitle).to.contains(addZonePage.pageTitleEdit);
+      expect(pageTitle).to.contains(addZonePage.pageTitleEdit);
     });
 
     it('should edit zone', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'ediZone', baseContext);
 
       const textResult = await addZonePage.createEditZone(page, editZoneData);
-      await expect(textResult).to.to.contains(zonesPage.successfulUpdateMessage);
+      expect(textResult).to.to.contains(boZonesPages.successfulUpdateMessage);
 
-      const numberOfZonesAfterReset = await zonesPage.resetAndGetNumberOfLines(page);
-      await expect(numberOfZonesAfterReset).to.be.equal(numberOfZones + 1);
+      const numberOfZonesAfterReset = await boZonesPages.resetAndGetNumberOfLines(page);
+      expect(numberOfZonesAfterReset).to.be.equal(numberOfZones + 1);
     });
   });
 
@@ -123,28 +126,28 @@ describe('BO - International - Zones : CRUD zone', async () => {
       await testContext.addContextItem(this, 'testIdentifier', 'filterToDelete', baseContext);
 
       // Filter
-      await zonesPage.filterZones(page, 'input', 'name', editZoneData.name);
+      await boZonesPages.filterZones(page, 'input', 'name', editZoneData.name);
 
       // Check number of zones
-      const numberOfZonesAfterFilter = await zonesPage.getNumberOfElementInGrid(page);
-      await expect(numberOfZonesAfterFilter).to.be.at.least(1);
+      const numberOfZonesAfterFilter = await boZonesPages.getNumberOfElementInGrid(page);
+      expect(numberOfZonesAfterFilter).to.be.at.least(1);
 
-      const textColumn = await zonesPage.getTextColumn(page, 1, 'name');
-      await expect(textColumn).to.contains(editZoneData.name);
+      const textColumn = await boZonesPages.getTextColumn(page, 1, 'name');
+      expect(textColumn).to.contains(editZoneData.name);
     });
 
     it('should delete zone', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'deleteZone', baseContext);
 
-      const textResult = await zonesPage.deleteZone(page, 1);
-      await expect(textResult).to.to.contains(zonesPage.successfulDeleteMessage);
+      const textResult = await boZonesPages.deleteZone(page, 1);
+      expect(textResult).to.to.contains(boZonesPages.successfulDeleteMessage);
     });
 
     it('should reset all filters', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'resetAfterDelete', baseContext);
 
-      const numberOfZonesAfterReset = await zonesPage.resetAndGetNumberOfLines(page);
-      await expect(numberOfZonesAfterReset).to.be.equal(numberOfZones);
+      const numberOfZonesAfterReset = await boZonesPages.resetAndGetNumberOfLines(page);
+      expect(numberOfZonesAfterReset).to.be.equal(numberOfZones);
     });
   });
 });

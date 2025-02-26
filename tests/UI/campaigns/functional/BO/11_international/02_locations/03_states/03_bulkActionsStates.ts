@@ -1,21 +1,18 @@
-// Import utils
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
+import {expect} from 'chai';
 
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
-
-// Import pages
-import dashboardPage from '@pages/BO/dashboard';
-import zonesPage from '@pages/BO/international/locations';
 import statesPage from '@pages/BO/international/locations/states';
 import addStatePage from '@pages/BO/international/locations/states/add';
 
-// Import data
-import StateData from '@data/faker/state';
-
-import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  boZonesPages,
+  type BrowserContext,
+  FakerState,
+  type Page,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_international_locations_states_bulkActionsStates';
 
@@ -24,74 +21,82 @@ describe('BO - International - States : Bulk edit status and bulk delete', async
   let page: Page;
   let numberOfStates: number = 0;
 
-  const statesToCreate: StateData[] = [
-    new StateData({name: 'todelete1', isoCode: 'HM'}),
-    new StateData({name: 'todelete2', isoCode: 'BV'}),
+  const statesToCreate: FakerState[] = [
+    new FakerState({name: 'todelete1', isoCode: 'HM', status: false}),
+    new FakerState({name: 'todelete2', isoCode: 'BV', status: false}),
   ];
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'International > Locations\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToLocationsPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.internationalParentLink,
-      dashboardPage.locationsLink,
+      boDashboardPage.internationalParentLink,
+      boDashboardPage.locationsLink,
     );
-    await zonesPage.closeSfToolBar(page);
+    await boZonesPages.closeSfToolBar(page);
 
-    const pageTitle = await zonesPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(zonesPage.pageTitle);
+    const pageTitle = await boZonesPages.getPageTitle(page);
+    expect(pageTitle).to.contains(boZonesPages.pageTitle);
   });
 
   it('should go to \'States\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToStatesPage', baseContext);
 
-    await zonesPage.goToSubTabStates(page);
+    await boZonesPages.goToSubTabStates(page);
 
     const pageTitle = await statesPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(statesPage.pageTitle);
+    expect(pageTitle).to.contains(statesPage.pageTitle);
   });
 
   it('should reset all filters and get number of states in BO', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'resetFilterFirst', baseContext);
 
-    numberOfStates = await statesPage.resetAndGetNumberOfLines(page);
-    await expect(numberOfStates).to.be.above(0);
+    await statesPage.resetAndGetNumberOfLines(page);
+
+    numberOfStates = await statesPage.getNumberOfElement(page);
+    expect(numberOfStates).to.be.above(0);
   });
 
   describe('Create 2 states in BO', async () => {
-    statesToCreate.forEach((stateToCreate: StateData, index: number) => {
+    statesToCreate.forEach((stateToCreate: FakerState, index: number) => {
       it('should go to add new title page', async function () {
         await testContext.addContextItem(this, 'testIdentifier', `goToNewStatePage${index + 1}`, baseContext);
 
         await statesPage.goToAddNewStatePage(page);
 
         const pageTitle = await addStatePage.getPageTitle(page);
-        await expect(pageTitle).to.contains(addStatePage.pageTitleCreate);
+        expect(pageTitle).to.contains(addStatePage.pageTitleCreate);
       });
 
       it('should create state and check result', async function () {
         await testContext.addContextItem(this, 'testIdentifier', `createState${index + 1}`, baseContext);
 
         const textResult = await addStatePage.createEditState(page, stateToCreate);
-        await expect(textResult).to.contains(statesPage.successfulCreationMessage);
+        expect(textResult).to.contains(statesPage.successfulCreationMessage);
 
-        const numberOfStatesAfterCreation = await statesPage.getNumberOfElementInGrid(page);
-        await expect(numberOfStatesAfterCreation).to.be.equal(numberOfStates + index + 1);
+        const numberOfStatesAfterCreation = await statesPage.getNumberOfElement(page);
+        expect(numberOfStatesAfterCreation).to.be.equal(numberOfStates + index + 1);
       });
     });
   });
@@ -103,20 +108,20 @@ describe('BO - International - States : Bulk edit status and bulk delete', async
       await statesPage.filterStates(
         page,
         'input',
-        'a!name',
+        'name',
         'todelete',
       );
 
       const numberOfStatesAfterFilter = await statesPage.getNumberOfElementInGrid(page);
-      await expect(numberOfStatesAfterFilter).to.be.at.most(numberOfStates);
+      expect(numberOfStatesAfterFilter).to.be.at.most(numberOfStates);
 
       for (let i = 1; i <= numberOfStatesAfterFilter; i++) {
         const textColumn = await statesPage.getTextColumn(
           page,
           i,
-          'a!name',
+          'name',
         );
-        await expect(textColumn).to.contains('todelete');
+        expect(textColumn).to.contains('todelete');
       }
     });
 
@@ -133,7 +138,7 @@ describe('BO - International - States : Bulk edit status and bulk delete', async
 
         for (let row = 1; row <= numberOfStatesBulkActions; row++) {
           const rowStatus = await statesPage.getStateStatus(page, row);
-          await expect(rowStatus).to.equal(test.wantedStatus);
+          expect(rowStatus).to.equal(test.wantedStatus);
         }
       });
     });
@@ -142,14 +147,14 @@ describe('BO - International - States : Bulk edit status and bulk delete', async
       await testContext.addContextItem(this, 'testIdentifier', 'bulkDeleteStates', baseContext);
 
       const deleteTextResult = await statesPage.bulkDeleteStates(page);
-      await expect(deleteTextResult).to.be.contains(statesPage.successfulMultiDeleteMessage);
+      expect(deleteTextResult).to.be.contains(statesPage.successfulMultiDeleteMessage);
     });
 
     it('should reset all filters', async function () {
       await testContext.addContextItem(this, 'testIdentifier', 'resetFilterAfterBulkActions', baseContext);
 
       const numberOfStatesAfterReset = await statesPage.resetAndGetNumberOfLines(page);
-      await expect(numberOfStatesAfterReset).to.be.equal(numberOfStates);
+      expect(numberOfStatesAfterReset).to.be.equal(numberOfStates);
     });
   });
 });

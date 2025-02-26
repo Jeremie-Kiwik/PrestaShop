@@ -10,6 +10,10 @@ inputs:
     required: false
     description: Node Version to Build Themes
     default: 16.20.1
+  DB_SERVER:
+    required: false
+    description: Database Server for PrestaShop (mysql/mariadb)
+    default: mysql
   ENABLE_SSL:
     required: false
     description: True to Run with SSL
@@ -18,7 +22,8 @@ inputs:
     required: false
     description: True To Auto Install
     default: 'true'
-  CP_API_CONFIG:    # Workaround until https://github.com/PrestaShop/PrestaShop/issues/29813 is fixed
+  CP_API_CONFIG:
+    # Workaround until 8.1.x is supported
     required: false
     description: True To Copy API Config
     default: 'false'
@@ -30,15 +35,14 @@ inputs:
     required: false
     description: true to disable Make
     default: 'false'
+  PRESTASHOP_DIR:
+    required: false
+    description: Prestashop folder
+    default: '.'
 
 runs:
   using: 'composite'
   steps:
-    - name: PrestaShop Configuration (Copy of Config API)
-      if: inputs.CP_API_CONFIG == 'true'
-      shell: bash
-      run: cp ./app/config/security_test.yml ./app/config/security_prod.yml
-
     # Certificate for SSL
     - name: Generate a Certificate
       if: inputs.ENABLE_SSL == 'true'
@@ -51,13 +55,19 @@ runs:
           chmod +x mkcert-v*-linux-amd64
           sudo cp mkcert-v*-linux-amd64 /usr/local/bin/mkcert
           ## Generate certificate
-          mkcert -key-file ./.docker/ssl.key -cert-file ./.docker/ssl.crt localhost
+          mkcert -key-file ${{ inputs.PRESTASHOP_DIR }}/.docker/ssl.key -cert-file ${{ inputs.PRESTASHOP_DIR }}/.docker/ssl.crt localhost
           ## Link certificate to Chrome Trust Store
           mkdir -p $HOME/.pki/nssdb
           certutil -d $HOME/.pki/nssdb -N
-          certutil -d sql:$HOME/.pki/nssdb -n localhost -A -t "TCu,Cu,Tu" -i ./.docker/ssl.crt
+          certutil -d sql:$HOME/.pki/nssdb -n localhost -A -t "TCu,Cu,Tu" -i ${{ inputs.PRESTASHOP_DIR }}/.docker/ssl.crt
           ## Add self-signed certificate to Chrome Trust Store
           mkcert -install
+
+    # Run composer install outside of docker because inside it regularly has network issues
+    - name: Composer Install
+      if: inputs.DISABLE_MAKE != 'true'
+      run: COMPOSER_PROCESS_TIMEOUT=600 composer install --ansi --prefer-dist --no-interaction --no-progress
+      shell: bash
 
     # Docker to create the shop
     - name: Build and Run shop with docker
@@ -66,13 +76,14 @@ runs:
         DISABLE_MAKE: ${{ (inputs.DISABLE_MAKE == 'true') && '1' || '0' }}
         PS_ENABLE_SSL: ${{ (inputs.ENABLE_SSL == 'true') && '1' || '0' }}
         PS_INSTALL_AUTO: ${{ (inputs.INSTALL_AUTO == 'true') && '1' || '0' }}
+        PS_USE_DOCKER_MAILDEV: 0
         VERSION: ${{ inputs.PHP_VERSION }}-apache
         NODE_VERSION: ${{ inputs.NODE_VERSION }}
         URL_FO: ${{ (inputs.ENABLE_SSL == 'false') && 'http://localhost:8001/' || 'https://localhost:8002/' }}
         URL_PING: ${{ (inputs.INSTALL_AUTO == 'true') && 'en/' || 'install-dev/' }}
-        PS_DOMAIN: ${{ (inputs.ENABLE_SSL == 'false')  && 'localhost:8001' || 'localhost:8002' }}
+        PS_DOMAIN: ${{ (inputs.ENABLE_SSL == 'false') && 'localhost:8001' || 'localhost:8002' }}
         PS_DEV_MODE: ${{ (inputs.DEV_MODE == 'false') && '0' || '1' }}
-        DB_SERVER: 'mysql'
+        DB_SERVER: ${{ inputs.DB_SERVER }}
         DB_NAME: 'prestashop'
         DB_PREFIX: 'tst_'
         DB_USER: 'root'
@@ -80,6 +91,7 @@ runs:
         PS_LANGUAGE: 'en'
         ADMIN_PASSWD: 'Correct Horse Battery Staple'
       run: |
+        cd ${{ inputs.PRESTASHOP_DIR }}
         USER_ID=$(id -u) GROUP_ID=$(id -g) \
-        docker compose -f docker-compose.yml up -d --build
+        docker compose -f ${{ (inputs.DB_SERVER == 'mysql') && 'docker-compose.yml' || 'docker-compose.mariadb.yml' }} up -d prestashop-git --build
         bash -c 'while [[ "$(curl -L -s -o /dev/null -w %{http_code} ${{ env.URL_FO }}${{ env.URL_PING }})" != "200" ]]; do sleep 5; done'

@@ -1,22 +1,21 @@
 // Import utils
-import files from '@utils/files';
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
 
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
-
 // Import pages
-import dashboardPage from '@pages/BO/dashboard';
 import imageSettingsPage from '@pages/BO/design/imageSettings';
 import addImageTypePage from '@pages/BO/design/imageSettings/add';
 
-// Import data
-import Products from '@data/demo/products';
-import ImageTypeData from '@data/faker/imageType';
-
 import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  type BrowserContext,
+  dataProducts,
+  FakerImageType,
+  type Page,
+  utilsFile,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_design_imageSettings_deleteActions';
 
@@ -34,43 +33,49 @@ describe('BO - Design - Image Settings : Delete Actions', async () => {
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'Design > Image Settings\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToImageSettingsPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.designParentLink,
-      dashboardPage.imageSettingsLink,
+      boDashboardPage.designParentLink,
+      boDashboardPage.imageSettingsLink,
     );
     await imageSettingsPage.closeSfToolBar(page);
 
     const pageTitle = await imageSettingsPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(imageSettingsPage.pageTitle);
+    expect(pageTitle).to.contains(imageSettingsPage.pageTitle);
   });
 
   it('should reset all filters and get number of image types in BO', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'resetFilterFirst', baseContext);
 
     numberOfImageTypes = await imageSettingsPage.resetAndGetNumberOfLines(page);
-    await expect(numberOfImageTypes).to.be.above(0);
+    expect(numberOfImageTypes).to.be.above(0);
   });
 
   // 1 : Create 2 new image types
   describe('Create 2 image types', async () => {
     testImageTypes.forEach((value: boolean, index: number) => {
-      const createImageTypeData: ImageTypeData = new ImageTypeData({name: `todelete${index}`});
+      const createImageTypeData: FakerImageType = new FakerImageType({name: `todelete${index}`});
 
       it('should go to add new image type page', async function () {
         await testContext.addContextItem(this, 'testIdentifier', `goToAddImageTypePage${index}`, baseContext);
@@ -78,17 +83,17 @@ describe('BO - Design - Image Settings : Delete Actions', async () => {
         await imageSettingsPage.goToNewImageTypePage(page);
 
         const pageTitle = await addImageTypePage.getPageTitle(page);
-        await expect(pageTitle).to.contains(addImageTypePage.pageTitleCreate);
+        expect(pageTitle).to.contains(addImageTypePage.pageTitleCreate);
       });
 
       it(`should create image type n°${index + 1}`, async function () {
         await testContext.addContextItem(this, 'testIdentifier', `createImageType${index}`, baseContext);
 
         const textResult = await addImageTypePage.createEditImageType(page, createImageTypeData);
-        await expect(textResult).to.contains(imageSettingsPage.successfulCreationMessage);
+        expect(textResult).to.contains(imageSettingsPage.successfulCreationMessage);
 
         const numberOfImageTypesAfterCreation = await imageSettingsPage.getNumberOfElementInGrid(page);
-        await expect(numberOfImageTypesAfterCreation).to.be.equal(numberOfImageTypes + 1 + index);
+        expect(numberOfImageTypesAfterCreation).to.be.equal(numberOfImageTypes + 1 + index);
       });
     });
 
@@ -96,20 +101,20 @@ describe('BO - Design - Image Settings : Delete Actions', async () => {
       await testContext.addContextItem(this, 'testIdentifier', 'regenerateThumbnails', baseContext);
 
       const textResult = await imageSettingsPage.regenerateThumbnails(page);
-      await expect(textResult).to.contains(imageSettingsPage.messageThumbnailsRegenerated);
+      expect(textResult).to.contains(imageSettingsPage.messageThumbnailsRegenerated);
     });
 
     testImageTypes.forEach((value: boolean, index: number) => {
       it(`should check thumbnails for the image type n°${index} are regenerated`, async function () {
         await testContext.addContextItem(this, 'testIdentifier', `checkProductsThumbnails${index}`, baseContext);
 
-        const imagePath = await files.getFilePathAutomaticallyGenerated(
-          `img/p/${Products.demo_1.id}/`,
-          `${Products.demo_1.id}-todelete${index}.jpg`,
+        const imagePath = await utilsFile.getFilePathAutomaticallyGenerated(
+          `img/p/${dataProducts.demo_1.id}/`,
+          `${dataProducts.demo_1.id}-todelete${index}.jpg`,
         );
 
-        const exist = await files.doesFileExist(imagePath);
-        await expect(exist, 'File doesn\'t exist!').to.be.true;
+        const exist = await utilsFile.doesFileExist(imagePath);
+        expect(exist, 'File doesn\'t exist!').to.eq(true);
       });
     });
   });
@@ -124,32 +129,32 @@ describe('BO - Design - Image Settings : Delete Actions', async () => {
         await imageSettingsPage.filterTable(page, 'input', 'name', `todelete${index}`);
 
         const numberOfImageTypesAfterFilter = await imageSettingsPage.getNumberOfElementInGrid(page);
-        await expect(numberOfImageTypesAfterFilter).to.be.eq(1);
+        expect(numberOfImageTypesAfterFilter).to.be.eq(1);
 
         const textColumn = await imageSettingsPage.getTextColumn(page, 1, 'name');
-        await expect(textColumn).to.contains(`todelete${index}`);
+        expect(textColumn).to.contains(`todelete${index}`);
       });
 
       it('should delete image type', async function () {
         await testContext.addContextItem(this, 'testIdentifier', `deleteImageType${index}`, baseContext);
 
         const textResult = await imageSettingsPage.deleteImageType(page, 1, value);
-        await expect(textResult).to.contains(imageSettingsPage.successfulDeleteMessage);
+        expect(textResult).to.contains(imageSettingsPage.successfulDeleteMessage);
 
         const numberOfImageTypesAfterDelete = await imageSettingsPage.resetAndGetNumberOfLines(page);
-        await expect(numberOfImageTypesAfterDelete).to.be.equal(numberOfImageTypes + (1 - index));
+        expect(numberOfImageTypesAfterDelete).to.be.equal(numberOfImageTypes + (1 - index));
       });
 
       it('should check that images relative to image type are not removed', async function () {
         await testContext.addContextItem(this, 'testIdentifier', `checkImagesRelativeImageType${index}`, baseContext);
 
-        const imagePath = await files.getFilePathAutomaticallyGenerated(
-          `img/p/${Products.demo_1.id}/`,
-          `${Products.demo_1.id}-todelete${index}.jpg`,
+        const imagePath = await utilsFile.getFilePathAutomaticallyGenerated(
+          `img/p/${dataProducts.demo_1.id}/`,
+          `${dataProducts.demo_1.id}-todelete${index}.jpg`,
         );
 
-        const exist = await files.doesFileExist(imagePath);
-        await expect(exist, 'File doesn\'t exist!').to.be.eq(!value);
+        const exist = await utilsFile.doesFileExist(imagePath);
+        expect(exist, 'File doesn\'t exist!').to.be.eq(!value);
       });
     });
   });

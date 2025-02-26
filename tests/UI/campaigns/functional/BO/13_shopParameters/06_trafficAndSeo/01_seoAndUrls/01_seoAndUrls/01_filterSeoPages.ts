@@ -1,19 +1,18 @@
 // Import utils
-import helper from '@utils/helpers';
 import testContext from '@utils/testContext';
 
-// Import commonTests
-import loginCommon from '@commonTests/BO/loginBO';
-
 // Import pages
-import dashboardPage from '@pages/BO/dashboard';
 import seoAndUrlsPage from '@pages/BO/shopParameters/trafficAndSeo/seoAndUrls';
 
-// Import data
-import SeoPages from '@data/demo/seoPages';
-
 import {expect} from 'chai';
-import type {BrowserContext, Page} from 'playwright';
+import {
+  boDashboardPage,
+  boLoginPage,
+  type BrowserContext,
+  dataSeoPages,
+  type Page,
+  utilsPlaywright,
+} from '@prestashop-core/ui-testing';
 
 const baseContext: string = 'functional_BO_shopParameters_trafficAndSeo_seoAndUrls_seoAndUrls_filterSeoPages';
 
@@ -28,45 +27,51 @@ describe('BO - Shop Parameters - Traffic & SEO : Filter SEO pages with id, page,
 
   // before and after functions
   before(async function () {
-    browserContext = await helper.createBrowserContext(this.browser);
-    page = await helper.newTab(browserContext);
+    browserContext = await utilsPlaywright.createBrowserContext(this.browser);
+    page = await utilsPlaywright.newTab(browserContext);
   });
 
   after(async () => {
-    await helper.closeBrowserContext(browserContext);
+    await utilsPlaywright.closeBrowserContext(browserContext);
   });
 
   it('should login in BO', async function () {
-    await loginCommon.loginBO(this, page);
+    await testContext.addContextItem(this, 'testIdentifier', 'loginBO', baseContext);
+
+    await boLoginPage.goTo(page, global.BO.URL);
+    await boLoginPage.successLogin(page, global.BO.EMAIL, global.BO.PASSWD);
+
+    const pageTitle = await boDashboardPage.getPageTitle(page);
+    expect(pageTitle).to.contains(boDashboardPage.pageTitle);
   });
 
   it('should go to \'Shop Parameters > Traffic & SEO\' page', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'goToSeoAndUrlsPage', baseContext);
 
-    await dashboardPage.goToSubMenu(
+    await boDashboardPage.goToSubMenu(
       page,
-      dashboardPage.shopParametersParentLink,
-      dashboardPage.trafficAndSeoLink,
+      boDashboardPage.shopParametersParentLink,
+      boDashboardPage.trafficAndSeoLink,
     );
     await seoAndUrlsPage.closeSfToolBar(page);
 
     const pageTitle = await seoAndUrlsPage.getPageTitle(page);
-    await expect(pageTitle).to.contains(seoAndUrlsPage.pageTitle);
+    expect(pageTitle).to.contains(seoAndUrlsPage.pageTitle);
   });
 
   it('should reset all filters and get number of SEO pages in BO', async function () {
     await testContext.addContextItem(this, 'testIdentifier', 'resetFilterFirst', baseContext);
 
     numberOfSeoPages = await seoAndUrlsPage.resetAndGetNumberOfLines(page);
-    await expect(numberOfSeoPages).to.be.above(0);
+    expect(numberOfSeoPages).to.be.above(0);
   });
 
   describe('Filter SEO pages', async () => {
     const tests = [
-      {args: {testIdentifier: 'filterIdMeta', filterBy: 'id_meta', filterValue: SeoPages.contact.id.toString()}},
-      {args: {testIdentifier: 'filterPage', filterBy: 'page', filterValue: SeoPages.contact.page}},
-      {args: {testIdentifier: 'filterTitle', filterBy: 'title', filterValue: SeoPages.contact.title}},
-      {args: {testIdentifier: 'filterUrlRewrite', filterBy: 'url_rewrite', filterValue: SeoPages.contact.friendlyUrl}},
+      {args: {testIdentifier: 'filterIdMeta', filterBy: 'id_meta', filterValue: dataSeoPages.contact.id.toString()}},
+      {args: {testIdentifier: 'filterPage', filterBy: 'page', filterValue: dataSeoPages.contact.page}},
+      {args: {testIdentifier: 'filterTitle', filterBy: 'title', filterValue: dataSeoPages.contact.title}},
+      {args: {testIdentifier: 'filterUrlRewrite', filterBy: 'url_rewrite', filterValue: dataSeoPages.contact.friendlyUrl}},
     ];
 
     tests.forEach((test) => {
@@ -80,11 +85,11 @@ describe('BO - Shop Parameters - Traffic & SEO : Filter SEO pages with id, page,
         );
 
         const numberOfSeoPagesAfterFilter = await seoAndUrlsPage.getNumberOfElementInGrid(page);
-        await expect(numberOfSeoPagesAfterFilter).to.be.at.most(numberOfSeoPages);
+        expect(numberOfSeoPagesAfterFilter).to.be.at.most(numberOfSeoPages);
 
         for (let i = 1; i <= numberOfSeoPagesAfterFilter; i++) {
           const textColumn = await seoAndUrlsPage.getTextColumnFromTable(page, i, test.args.filterBy);
-          await expect(textColumn).to.contains(test.args.filterValue);
+          expect(textColumn).to.contains(test.args.filterValue);
         }
       });
 
@@ -92,7 +97,7 @@ describe('BO - Shop Parameters - Traffic & SEO : Filter SEO pages with id, page,
         await testContext.addContextItem(this, 'testIdentifier', `${test.args.testIdentifier}Reset`, baseContext);
 
         const numberOfSeoPagesAfterReset = await seoAndUrlsPage.resetAndGetNumberOfLines(page);
-        await expect(numberOfSeoPagesAfterReset).to.equal(numberOfSeoPages);
+        expect(numberOfSeoPagesAfterReset).to.equal(numberOfSeoPages);
       });
     });
   });
