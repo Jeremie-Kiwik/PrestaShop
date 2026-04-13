@@ -1,0 +1,89 @@
+{#
+ # For the full copyright and license information, please view the
+ # docs/licenses/LICENSE.txt file that was distributed with this source code.
+ #}
+
+{% form_theme extraFieldForm '@PrestaShop/Admin/TwigTemplateForm/prestashop_ui_kit.html.twig' %}
+{% trans_default_domain 'Admin.Advparameters.Feature' %}
+
+{% block extra_field_form %}
+  {{ form_start(extraFieldForm) }}
+    {% if not isEdit is defined or not isEdit %}
+      {# ── Structural fields (create only) ─────────────────────────────────── #}
+      <div class="card">
+        <h3 class="card-header">
+          {{ 'Field definition'|trans }}
+        </h3>
+        <div class="card-body">
+          <div class="form-wrapper">
+            {{ form_row(extraFieldForm.entity_name) }}
+            {{ form_row(extraFieldForm.field_name) }}
+            {{ form_row(extraFieldForm.field_type) }}
+            {{ form_row(extraFieldForm.field_scope) }}
+            {{ form_row(extraFieldForm.sql_index) }}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {# ── Display labels ──────────────────────────────────────────────────── #}
+    <div class="card mt-2">
+      <h3 class="card-header">
+        {{ 'Display labels'|trans }}
+      </h3>
+      <div class="card-body">
+        <div class="form-wrapper">
+          {{ form_row(extraFieldForm.title_wording) }}
+          {{ form_row(extraFieldForm.title_domain) }}
+          {{ form_row(extraFieldForm.description_wording) }}
+          {{ form_row(extraFieldForm.description_domain) }}
+        </div>
+      </div>
+    </div>
+
+    {# ── Visibility flags ────────────────────────────────────────────────── #}
+    <div class="card mt-2">
+      <h3 class="card-header">
+        {{ 'Visibility'|trans }}
+      </h3>
+      <div class="card-body">
+        <div class="form-wrapper">
+          {{ form_row(extraFieldForm.display_bo) }}
+          {{ form_row(extraFieldForm.display_grid) }}
+          {{ form_row(extraFieldForm.display_front) }}
+          {{ form_row(extraFieldForm.display_api) }}
+          {{ form_row(extraFieldForm.grid_position) }}
+        </div>
+      </div>
+    </div>
+
+    {# ── Advanced ────────────────────────────────────────────────────────── #}
+    <div class="card mt-2">
+      <h3 class="card-header">
+        {{ 'Advanced'|trans({}, 'Admin.Global') }}
+      </h3>
+      <div class="card-body">
+        <div class="form-wrapper">
+          {{ form_row(extraFieldForm.validator) }}
+          {{ form_row(extraFieldForm.symfony_field_type) }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card-footer mt-2 d-flex align-items-center">
+      <a href="{{ path('admin_extra_fields_index') }}" class="btn btn-outline-secondary">
+        {{ 'Back to list'|trans({}, 'Admin.Actions') }}
+      </a>
+      {% if not (readOnly is defined and readOnly) %}
+        <button type="submit" class="btn btn-primary ml-auto">
+          {{ 'Save'|trans({}, 'Admin.Actions') }}
+        </button>
+      {% else %}
+        <span class="ml-auto text-muted small">
+          {{ 'This field is managed by a module and cannot be edited here.'|trans({}, 'Admin.Advparameters.Notification') }}
+        </span>
+      {% endif %}
+    </div>
+
+  {{ form_end(extraFieldForm) }}
+{% endblock %}

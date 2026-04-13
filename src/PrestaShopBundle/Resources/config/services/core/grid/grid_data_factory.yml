@@ -38,6 +38,14 @@ services:
       - '@prestashop.core.grid.query.doctrine_query_parser'
       - 'request_sql'
 
+  prestashop.core.grid.data_factory.extra_field:
+    class: '%prestashop.core.grid.data.factory.doctrine_grid_data_factory%'
+    arguments:
+      - '@prestashop.core.grid.query_builder.extra_field'
+      - '@prestashop.core.hook.dispatcher'
+      - '@prestashop.core.grid.query.doctrine_query_parser'
+      - 'extra_property_definition'
+
   prestashop.core.grid.data_factory.webservice_key:
     class: '%prestashop.core.grid.data.factory.doctrine_grid_data_factory%'
     arguments:

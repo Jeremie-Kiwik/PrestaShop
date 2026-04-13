@@ -1,0 +1,57 @@
+admin_extra_fields_index:
+  path: /
+  methods: [ GET ]
+  defaults:
+    _controller: 'PrestaShopBundle\Controller\Admin\Configure\AdvancedParameters\ExtraFieldController::indexAction'
+    _legacy_controller: AdminExtraField
+    _legacy_link: AdminExtraField
+
+admin_extra_fields_search:
+  path: /
+  methods: [ POST ]
+  defaults:
+    _controller: PrestaShopBundle\Controller\Admin\CommonController::searchGridAction
+    gridDefinitionFactoryServiceId: prestashop.core.grid.definition.factory.extra_field
+    redirectRoute: admin_extra_fields_index
+    _legacy_controller: AdminExtraField
+    _legacy_link: AdminExtraField:search
+
+admin_extra_fields_create:
+  path: /new
+  methods: [ GET, POST ]
+  defaults:
+    _controller: 'PrestaShopBundle\Controller\Admin\Configure\AdvancedParameters\ExtraFieldController::createAction'
+    _legacy_controller: AdminExtraField
+    _legacy_link: AdminExtraField:add
+
+admin_extra_fields_edit:
+  path: /{extraFieldId}/edit
+  methods: [ GET, POST ]
+  defaults:
+    _controller: 'PrestaShopBundle\Controller\Admin\Configure\AdvancedParameters\ExtraFieldController::editAction'
+    _legacy_controller: AdminExtraField
+    _legacy_link: AdminExtraField:edit
+    _legacy_parameters:
+      id_extra_property_definition: extraFieldId
+  requirements:
+    extraFieldId: \d+
+
+admin_extra_fields_delete:
+  path: /{extraFieldId}/delete
+  methods: [ GET, DELETE ]
+  defaults:
+    _controller: 'PrestaShopBundle\Controller\Admin\Configure\AdvancedParameters\ExtraFieldController::deleteAction'
+    _legacy_controller: AdminExtraField
+    _legacy_link: AdminExtraField:delete
+    _legacy_parameters:
+      id_extra_property_definition: extraFieldId
+  requirements:
+    extraFieldId: \d+
+
+admin_extra_fields_delete_bulk:
+  path: /delete-bulk
+  methods: [ POST ]
+  defaults:
+    _controller: 'PrestaShopBundle\Controller\Admin\Configure\AdvancedParameters\ExtraFieldController::deleteBulkAction'
+    _legacy_controller: AdminExtraField
+    _legacy_link: AdminExtraField:deleteBulk

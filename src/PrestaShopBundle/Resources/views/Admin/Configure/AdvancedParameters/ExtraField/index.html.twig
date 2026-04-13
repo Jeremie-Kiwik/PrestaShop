@@ -1,0 +1,25 @@
+{#
+ # For the full copyright and license information, please view the
+ # docs/licenses/LICENSE.txt file that was distributed with this source code.
+ #}
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+{% trans_default_domain 'Admin.Advparameters.Feature' %}
+
+{% block content %}
+  {% block extra_fields_info_block %}
+    <div class="alert alert-info" role="alert">
+      <p class="alert-text">
+        {{ 'Extra fields allow you to add custom properties to PrestaShop entities (products, customers, orders, etc.).'|trans({}, 'Admin.Advparameters.Help') }}
+      </p>
+      <ul>
+        <li>{{ 'Fields with an empty module name are "core" fields — they can be created, edited and deleted here.'|trans({}, 'Admin.Advparameters.Help') }}</li>
+        <li>{{ 'Fields managed by a module can only be managed by this module.'|trans({}, 'Admin.Advparameters.Help') }}</li>
+        <li>{{ 'Deleting a field also drops its physical database column and all associated values.'|trans({}, 'Admin.Advparameters.Help') }}</li>
+      </ul>
+    </div>
+  {% endblock %}
+
+  {% block extra_fields_grid %}
+    {{ include('@PrestaShop/Admin/Common/Grid/grid_panel.html.twig', {grid: extraFieldGrid}) }}
+  {% endblock %}
+{% endblock %}

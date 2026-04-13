@@ -145,6 +145,26 @@ services:
     arguments:
       $writer: '@PrestaShop\PrestaShop\Core\ExtraProperty\Storage\ExtraPropertyWriterInterface'
 
+  # ─── BO definition management command handlers ────────────────────────────────
+
+  PrestaShop\PrestaShop\Adapter\ExtraProperty\CommandHandler\AddExtraPropertyDefinitionCommandHandler:
+    public: false
+    autoconfigure: true
+    arguments:
+      $registry: '@PrestaShop\PrestaShop\Core\ExtraProperty\Registry\ExtraPropertyRegistryInterface'
+
+  PrestaShop\PrestaShop\Adapter\ExtraProperty\CommandHandler\EditExtraPropertyDefinitionCommandHandler:
+    public: false
+    autoconfigure: true
+    arguments:
+      $repository: '@PrestaShop\PrestaShop\Adapter\ExtraProperty\Repository\ExtraPropertyDefinitionRepository'
+
+  PrestaShop\PrestaShop\Adapter\ExtraProperty\CommandHandler\DeleteExtraPropertyDefinitionCommandHandler:
+    public: false
+    autoconfigure: true
+    arguments:
+      $registry: '@PrestaShop\PrestaShop\Core\ExtraProperty\Registry\ExtraPropertyRegistryInterface'
+
   # ─── CQRS query handlers ──────────────────────────────────────────────────────
 
   PrestaShop\PrestaShop\Adapter\ExtraProperty\QueryHandler\GetExtraPropertyDefinitionsHandler:
@@ -160,6 +180,12 @@ services:
       $registry: '@PrestaShop\PrestaShop\Core\ExtraProperty\Registry\EntityExtraFieldRegistryInterface'
       $connection: '@doctrine.dbal.default_connection'
       $prefix: '%database_prefix%'
+
+  PrestaShop\PrestaShop\Adapter\ExtraProperty\QueryHandler\GetExtraPropertyDefinitionForEditingHandler:
+    public: false
+    autoconfigure: true
+    arguments:
+      $registry: '@PrestaShop\PrestaShop\Core\ExtraProperty\Registry\ExtraPropertyRegistryInterface'
 
   # ─── Admin API extra properties service ──────────────────────────────────────
   # Declared in this common context so it is available in the admin-api container

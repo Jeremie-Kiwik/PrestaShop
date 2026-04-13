@@ -139,4 +139,5 @@
     <tab id="Security_1" name="Security" />
     <tab id="EmployeeSessions" name="Employee Sessions" />
     <tab id="CustomerSessions" name="Customer Sessions" />
+    <tab id="ExtraField" name="Extra fields" />
 </entity_tab>

@@ -26,6 +26,14 @@ services:
       - '@prestashop.core.grid.filter.form_factory'
       - '@prestashop.core.hook.dispatcher'
 
+  prestashop.core.grid.factory.extra_field:
+    class: 'PrestaShop\PrestaShop\Core\Grid\GridFactory'
+    arguments:
+      - '@prestashop.core.grid.definition.factory.extra_field'
+      - '@prestashop.core.grid.data_factory.extra_field'
+      - '@prestashop.core.grid.filter.form_factory'
+      - '@prestashop.core.hook.dispatcher'
+
   prestashop.core.grid.factory.backup:
     class: 'PrestaShop\PrestaShop\Core\Grid\GridFactory'
     arguments:

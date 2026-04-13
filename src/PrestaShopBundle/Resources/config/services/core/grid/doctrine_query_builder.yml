@@ -405,6 +405,11 @@ services:
     parent: 'prestashop.core.grid.abstract_query_builder'
     public: true
 
+  prestashop.core.grid.query_builder.extra_field:
+    class: 'PrestaShop\PrestaShop\Core\Grid\Query\ExtraPropertyDefinitionQueryBuilder'
+    parent: 'prestashop.core.grid.abstract_query_builder'
+    public: true
+
   prestashop.core.grid.query_builder.outstanding:
     class: 'PrestaShop\PrestaShop\Core\Grid\Query\OutstandingQueryBuilder'
     parent: 'prestashop.core.grid.abstract_query_builder'
