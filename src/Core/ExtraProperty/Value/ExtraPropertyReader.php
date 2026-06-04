@@ -82,10 +82,15 @@ class ExtraPropertyReader implements ExtraPropertyReaderInterface
      * Fetches extra property values for one scope and returns them grouped by module name.
      *
      * When $langId is null (lang scope) or $shopId is null (shop scope), all rows are fetched
-     * and grouped by id_lang / id_shop respectively — used by BO forms and Admin API.
+     * and grouped accordingly — used by BO forms and Admin API.
      * When specific IDs are given, a WHERE clause filters to a single row.
      *
-     * Returned structure: ['module_key' => ['property_name' => value_or_keyed_array]]
+     * Returned structures:
+     *   - common scope          : ['module_key' => ['field' => scalar]]
+     *   - lang scope, 1 shop    : ['module_key' => ['field' => [id_lang => scalar]]]
+     *   - lang scope, allShops,
+     *     isLangMultishop=true  : ['module_key' => ['field' => [id_shop => [id_lang => scalar]]]]
+     *   - shop scope, allShops  : ['module_key' => ['field' => [id_shop => scalar]]]
      *
      * @param list<ExtraPropertyDefinition> $definitions All definitions for this scope
      *
@@ -101,8 +106,12 @@ class ExtraPropertyReader implements ExtraPropertyReaderInterface
         ?int $shopId,
         bool $isLangMultishop,
     ): array {
-        $groupByLang = ExtraPropertyScope::LANG->value === $fieldScope && null === $langId;
-        $groupByShop = ExtraPropertyScope::SHOP->value === $fieldScope && null === $shopId;
+        $isLangScope = ExtraPropertyScope::LANG->value === $fieldScope;
+        $isShopScope = ExtraPropertyScope::SHOP->value === $fieldScope;
+        $groupByLang = $isLangScope && null === $langId;
+        $groupByShop = $isShopScope && null === $shopId;
+        // Special case: lang_multishop entity + allShops → group by [id_shop][id_lang].
+        $groupByShopAndLang = $isLangScope && $isLangMultishop && $groupByLang && null === $shopId;
         $isGrouped = $groupByLang || $groupByShop;
 
         $extraTableName = ExtraPropertyDefinition::buildExtraTableName($entityName, ExtraPropertyScope::from($fieldScope));
@@ -133,13 +142,13 @@ class ExtraPropertyReader implements ExtraPropertyReaderInterface
         }
 
         // Skip if IDs that must be positive were given but are invalid.
-        if (ExtraPropertyScope::LANG->value === $fieldScope && null !== $langId && $langId <= 0) {
+        if ($isLangScope && null !== $langId && $langId <= 0) {
             return $result;
         }
-        if (ExtraPropertyScope::SHOP->value === $fieldScope && null !== $shopId && $shopId <= 0) {
+        if ($isShopScope && null !== $shopId && $shopId <= 0) {
             return $result;
         }
-        if (ExtraPropertyScope::LANG->value === $fieldScope && $isLangMultishop && null !== $shopId && $shopId <= 0) {
+        if ($isLangScope && $isLangMultishop && null !== $shopId && $shopId <= 0) {
             return $result;
         }
 
@@ -154,17 +163,27 @@ class ExtraPropertyReader implements ExtraPropertyReaderInterface
             array_keys($columnToPropertyMap)
         );
 
-        if (ExtraPropertyScope::LANG->value === $fieldScope) {
-            if ($groupByLang) {
-                // Fetch all languages; caller will receive an array keyed by id_lang.
+        if ($isLangScope) {
+            if ($groupByShopAndLang) {
+                // allShops + isLangMultishop: fetch both dimensions — no WHERE on id_shop or id_lang.
+                array_unshift(
+                    $selectCols,
+                    'extra.' . $this->connection->quoteIdentifier('id_shop'),
+                    'extra.' . $this->connection->quoteIdentifier('id_lang')
+                );
+            } elseif ($groupByLang) {
+                // Single-shop or no-shop context: group by lang only.
                 array_unshift($selectCols, 'extra.' . $this->connection->quoteIdentifier('id_lang'));
+                if ($isLangMultishop && null !== $shopId) {
+                    $qb->andWhere('extra.id_shop = :shopId')->setParameter('shopId', $shopId);
+                }
             } else {
                 $qb->andWhere('extra.id_lang = :langId')->setParameter('langId', $langId);
+                if ($isLangMultishop && null !== $shopId) {
+                    $qb->andWhere('extra.id_shop = :shopId')->setParameter('shopId', $shopId);
+                }
             }
-            if ($isLangMultishop && null !== $shopId) {
-                $qb->andWhere('extra.id_shop = :shopId')->setParameter('shopId', $shopId);
-            }
-        } elseif (ExtraPropertyScope::SHOP->value === $fieldScope) {
+        } elseif ($isShopScope) {
             if ($groupByShop) {
                 // Fetch all shops; caller will receive an array keyed by id_shop.
                 array_unshift($selectCols, 'extra.' . $this->connection->quoteIdentifier('id_shop'));
@@ -187,7 +206,16 @@ class ExtraPropertyReader implements ExtraPropertyReaderInterface
         }
 
         foreach ($rows as $row) {
-            if ($groupByLang) {
+            if ($groupByShopAndLang) {
+                // allShops + lang_multishop: group as [id_shop][id_lang] => value.
+                $shopKey = (int) ($row['id_shop'] ?? 0);
+                $langKey = (int) ($row['id_lang'] ?? 0);
+                foreach ($columnToPropertyMap as $columnName => $propertyPath) {
+                    if (array_key_exists($columnName, $row)) {
+                        $result[$propertyPath['module_name']][$propertyPath['property_name']][$shopKey][$langKey] = $row[$columnName];
+                    }
+                }
+            } elseif ($groupByLang) {
                 $groupKey = (int) ($row['id_lang'] ?? 0);
                 foreach ($columnToPropertyMap as $columnName => $propertyPath) {
                     if (array_key_exists($columnName, $row)) {

@@ -39,6 +39,7 @@ use Throwable;
  * Three field scopes are supported:
  *  - entity : stored in `{prefix}{entity}_extra`,      keyed directly by field name
  *  - lang   : stored in `{prefix}{entity}_extra_lang`, keyed by locale string (e.g. "fr-FR")
+ *             In allShops context for lang_multishop entities, keyed as [id_shop => [locale => value]]
  *  - shop   : stored in `{prefix}{entity}_extra_shop`, keyed by shop ID (integer)
  */
 class ExtraPropertiesApiService
@@ -211,6 +212,17 @@ class ExtraPropertiesApiService
             $basePath = sprintf('extraProperties.%s.%s', $moduleName, $fieldName);
 
             if ('lang' === $scope && is_array($value)) {
+                // Detect lang_multishop allShops: [id_shop => [locale => value]]
+                $firstValue = !empty($value) ? reset($value) : null;
+                if (is_array($firstValue)) {
+                    foreach ($value as $shopId => $localeValues) {
+                        foreach ((array) $localeValues as $locale => $localeValue) {
+                            $this->validateOneValue($violations, $def, $localeValue, $basePath . '.' . (string) $shopId . '.' . (string) $locale);
+                        }
+                    }
+                    continue;
+                }
+                // Standard lang: [locale => value]
                 foreach ($value as $locale => $localeValue) {
                     $this->validateOneValue($violations, $def, $localeValue, $basePath . '.' . (string) $locale);
                 }
@@ -303,6 +315,7 @@ class ExtraPropertiesApiService
      *
      * - entity scope : ['module' => ['field' => scalar_value]]
      * - lang scope   : ['module' => ['field' => ['fr-FR' => value, 'en-GB' => value]]]
+     *                  in allShops + lang_multishop: ['module' => ['field' => [1 => ['fr-FR' => value, ...], 2 => [...]]]]
      * - shop scope   : ['module' => ['field' => scalar_value]]   (single-shop context, R8)
      * - shop scope   : ['module' => ['field' => [1 => value, 2 => value]]]  (all-shops context)
      *
@@ -371,9 +384,10 @@ class ExtraPropertiesApiService
 
         $entityValues = $this->buildEntityScopeValues($allDefinitions, $extraPropertiesByModule);
         $langValuesByIdLang = $this->buildLangScopeValues($allDefinitions, $extraPropertiesByModule);
+        $langValuesByShopAndLang = $this->buildLangMultishopScopeValuesByShop($allDefinitions, $extraPropertiesByModule);
         $shopValuesByShopId = $this->buildShopScopeValues($allDefinitions, $extraPropertiesByModule);
 
-        if (empty($entityValues) && empty($langValuesByIdLang) && empty($shopValuesByShopId)) {
+        if (empty($entityValues) && empty($langValuesByIdLang) && empty($langValuesByShopAndLang) && empty($shopValuesByShopId)) {
             return;
         }
 
@@ -388,6 +402,22 @@ class ExtraPropertiesApiService
                 $langValuesByIdLang,
                 [],
                 $shopConstraint
+            );
+        }
+
+        // Lang_multishop allShops: write per shop so each shop gets its own lang values.
+        foreach ($langValuesByShopAndLang as $shopId => $shopLangValues) {
+            if (empty($shopLangValues)) {
+                continue;
+            }
+            $this->writer->writeAll(
+                $entityTable,
+                'id_' . $entityTable,
+                $entityId,
+                [],
+                $shopLangValues,
+                [],
+                ShopConstraint::shop((int) $shopId)
             );
         }
 
@@ -449,6 +479,9 @@ class ExtraPropertiesApiService
      * Locale strings (e.g. "fr-FR") in the payload are resolved to id_lang (int).
      * Only definitions flagged display_api = 1 and scope 'lang' are included.
      *
+     * Fields whose payload is in [id_shop => [locale => value]] format (lang_multishop allShops)
+     * are skipped here and handled by buildLangMultishopScopeValuesByShop() instead.
+     *
      * @param ExtraPropertyDefinitionCollection $allDefinitions
      * @param array<string, array<string, mixed>> $extraPropertiesByModule
      *
@@ -469,6 +502,12 @@ class ExtraPropertiesApiService
 
             $fieldValue = $extraPropertiesByModule[$moduleName][$fieldName] ?? null;
             if (!is_array($fieldValue)) {
+                continue;
+            }
+
+            // Skip multishop-keyed format [id_shop => [locale => value]] — handled separately.
+            $firstValue = !empty($fieldValue) ? reset($fieldValue) : null;
+            if (is_array($firstValue)) {
                 continue;
             }
 
@@ -493,6 +532,61 @@ class ExtraPropertiesApiService
         }
 
         return $langValuesByIdLang;
+    }
+
+    /**
+     * Builds lang-scope column values for the lang_multishop allShops case.
+     *
+     * Expects payload values in [id_shop => [locale => value]] format (as produced by GET in
+     * allShops context for lang_multishop entities). Standard [locale => value] fields are
+     * skipped here and handled by buildLangScopeValues() instead.
+     *
+     * @param ExtraPropertyDefinitionCollection $allDefinitions
+     * @param array<string, array<string, mixed>> $extraPropertiesByModule
+     *
+     * @return array<int, array<int, array<string, mixed>>> [id_shop => [id_lang => [storage_column => value]]]
+     */
+    protected function buildLangMultishopScopeValuesByShop(ExtraPropertyDefinitionCollection $allDefinitions, array $extraPropertiesByModule): array
+    {
+        $columnToPropertyMap = $this->buildColumnPropertyMap($allDefinitions, 'lang');
+        if (empty($columnToPropertyMap)) {
+            return [];
+        }
+
+        $localeToIdLangMap = null;
+        $shopLangColumnValues = [];
+
+        foreach ($columnToPropertyMap as $columnName => $propertyPath) {
+            $moduleName = $propertyPath['module_name'];
+            $fieldName = $propertyPath['property_name'];
+
+            $fieldValue = $extraPropertiesByModule[$moduleName][$fieldName] ?? null;
+            if (!is_array($fieldValue)) {
+                continue;
+            }
+
+            // Only process multishop-keyed format: [id_shop => [locale => value]].
+            $firstValue = !empty($fieldValue) ? reset($fieldValue) : null;
+            if (!is_array($firstValue)) {
+                continue;
+            }
+
+            if (null === $localeToIdLangMap) {
+                $localeToIdLangMap = array_flip($this->fetchLangIdLocaleMap());
+            }
+
+            foreach ($fieldValue as $shopId => $langValues) {
+                foreach ((array) $langValues as $locale => $value) {
+                    $idLang = $localeToIdLangMap[(string) $locale] ?? null;
+                    if (null === $idLang) {
+                        continue;
+                    }
+                    $shopLangColumnValues[(int) $shopId][(int) $idLang][$columnName] = $value;
+                }
+            }
+        }
+
+        return $shopLangColumnValues;
     }
 
     /**
@@ -729,7 +823,23 @@ class ExtraPropertiesApiService
 
                 $isLangScoped = !empty($langScopedFieldsByModule[$moduleName][$fieldName]);
                 if ($isLangScoped) {
-                    // Lang-scope: convert id_lang → locale string
+                    // Detect lang_multishop allShops: [id_shop => [id_lang => value]]
+                    $firstValue = !empty($value) ? reset($value) : null;
+                    if (is_array($firstValue)) {
+                        // [id_shop][id_lang → value] → [id_shop][locale → value]
+                        $converted = [];
+                        foreach ($value as $shopId => $langValues) {
+                            foreach ((array) $langValues as $idLang => $langValue) {
+                                $locale = $langLocaleMap[(int) $idLang] ?? null;
+                                if (null !== $locale) {
+                                    $converted[(int) $shopId][$locale] = $langValue;
+                                }
+                            }
+                        }
+                        $result[$moduleName][$fieldName] = $converted;
+                        continue;
+                    }
+                    // Standard lang scope: [id_lang → value] → [locale → value]
                     $converted = [];
                     foreach ($value as $idLang => $langValue) {
                         $locale = $langLocaleMap[(int) $idLang] ?? null;

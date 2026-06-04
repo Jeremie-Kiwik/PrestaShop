@@ -194,6 +194,13 @@ class ExtraPropertiesFormBuilderModifier
     }
 
     /**
+     * Extracts the raw value for a field from the reader's output.
+     *
+     * For lang-scoped fields the reader normally returns [id_lang => value].
+     * In allShops context on a lang_multishop entity it returns [id_shop => [id_lang => value]].
+     * TranslatableType expects [id_lang => value], so the nested structure is flattened by
+     * returning the first available shop's values as a best-effort approximation.
+     *
      * @param array<string, array<string, mixed>> $existingValues
      *
      * @return mixed
@@ -203,7 +210,17 @@ class ExtraPropertiesFormBuilderModifier
         $value = $existingValues[$moduleName][$fieldName] ?? null;
 
         if ('lang' === $scope) {
-            return is_array($value) ? $value : [];
+            if (!is_array($value)) {
+                return [];
+            }
+            // Lang_multishop allShops: reader returns [id_shop => [id_lang => value]].
+            // Use the first shop's values — TranslatableType expects a flat [id_lang => value] map.
+            $firstValue = reset($value);
+            if (is_array($firstValue)) {
+                return $firstValue;
+            }
+
+            return $value;
         }
 
         return $value;

@@ -113,15 +113,15 @@ final class AddExtraPropertyDefinitionHandler extends AbstractExtraPropertyDefin
             );
         }
 
-        // Fetch the newly created definition to retrieve its auto-generated id.
-        $definition = $this->readRepository->findDefinitionByModuleAndField(
+        // Fetch the auto-generated primary key of the newly created definition.
+        $id = $this->readRepository->findIdByModuleAndField(
             $command->getEntityName(),
             null,
             $command->getPropertyName(),
             $command->getFieldScope()
         );
 
-        if (null === $definition) {
+        if (null === $id) {
             throw new ExtraPropertyException(
                 sprintf(
                     'Extra property "%s" on entity "%s" was registered but could not be loaded afterwards.',
@@ -131,6 +131,6 @@ final class AddExtraPropertyDefinitionHandler extends AbstractExtraPropertyDefin
             );
         }
 
-        return new ExtraPropertyDefinitionId($definition->getId());
+        return new ExtraPropertyDefinitionId($id);
     }
 }

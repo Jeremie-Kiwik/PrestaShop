@@ -89,6 +89,16 @@ class CachedExtraPropertyDefinitionRepository implements ExtraPropertyDefinition
     }
 
     /**
+     * {@inheritdoc}
+     *
+     * Not cached: called only after a write operation where we need a fresh DB read.
+     */
+    public function findIdByModuleAndField(string $entityName, ?string $moduleName, string $fieldName, string $fieldScope): ?int
+    {
+        return $this->repository->findIdByModuleAndField($entityName, $moduleName, $fieldName, $fieldScope);
+    }
+
+    /**
      * Builds the cache key for an entity's definition list.
      *
      * Declared public static so CachedExtraPropertyRegistry can compute the same key.

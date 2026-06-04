@@ -179,6 +179,14 @@ class ExtraPropertyDefinitionRepository implements ExtraPropertyDefinitionReposi
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function findIdByModuleAndField(string $entityName, ?string $moduleName, string $fieldName, string $fieldScope): ?int
+    {
+        return $this->findIdByUniqueKey($entityName, $moduleName, $fieldName, $fieldScope);
+    }
+
+    /**
      * Looks up the primary key for a definition identified by its unique key.
      *
      * Returns null when no matching row exists.

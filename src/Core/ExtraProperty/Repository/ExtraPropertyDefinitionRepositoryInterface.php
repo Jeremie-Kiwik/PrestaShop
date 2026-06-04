@@ -78,4 +78,24 @@ interface ExtraPropertyDefinitionRepositoryInterface
         string $fieldName,
         string $fieldScope,
     ): ?ExtraPropertyDefinition;
+
+    /**
+     * Returns the database primary key for a definition identified by its unique key.
+     *
+     * Use this after a write operation (add / edit) when only the numeric id is needed,
+     * to avoid loading the full ExtraPropertyDefinition object.
+     *
+     * @param string $entityName Normalized entity name
+     * @param string|null $moduleName Module technical name, or null for core fields
+     * @param string $fieldName Property name
+     * @param string $fieldScope Normalized scope ('common', 'lang', 'shop')
+     *
+     * @return int|null Numeric primary key, or null when not found
+     */
+    public function findIdByModuleAndField(
+        string $entityName,
+        ?string $moduleName,
+        string $fieldName,
+        string $fieldScope,
+    ): ?int;
 }
